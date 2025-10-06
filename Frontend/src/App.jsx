@@ -1,12 +1,22 @@
 import { useState } from 'react'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import './index.css'
+import LandingPage from './pages/LandingPage.jsx'
+import Login from './pages/auth/Login.jsx';
 
 function App() {
 
 
   return (
     <>
-      <h1 class="text-3xl font-bold">Alumni Connect</h1>
+    <BrowserRouter>
+     
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/Login" element={<Login />} />
+        </Routes>
+     
+      </BrowserRouter>
     </>
   )
 }

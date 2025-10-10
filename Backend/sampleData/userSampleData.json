@@ -1,0 +1,129 @@
+[
+  {
+    "role": "alumni",
+    "prn_number": "78071028K",
+    "name": "Sumit Patil",
+    "email": "sumit07@gmail.com"
+  },
+  {
+    "role": "student",
+    "prn_number": "78451098K",
+    "name": "Pavan Patil",
+    "email": "pavan17@gmail.com"
+  },
+  {
+    "role": "student",
+    "prn_number": "78458998K",
+    "name": "Ajinkya Patil",
+    "email": "ajinkya@gmail.com"
+  },
+  {
+    "role": "student",
+    "prn_number": "78451028K",
+    "name": "Aarav Patil",
+    "email": "aaravpatil0@gmail.com"
+  },
+  {
+    "role": "teacher",
+    "employe_id": "27691028T",
+    "name": "Swati Joshi",
+    "email": "swatijoshi1@yahoo.com"
+  },
+  {
+    "role": "alumni",
+    "prn_number": "78391028H",
+    "name": "Sumit Kadam",
+    "email": "sumitkadam2@outlook.com"
+  },
+  {
+    "role": "student",
+    "prn_number": "78541028J",
+    "name": "Pavan Pawar",
+    "email": "pavanpawar3@gmail.com"
+  },
+  {
+    "role": "teacher",
+    "employe_id": "27821028L",
+    "name": "Meera Sharma",
+    "email": "meerasharma4@college.edu"
+  },
+  {
+    "role": "student",
+    "prn_number": "78671028F",
+    "name": "Rohan Deshmukh",
+    "email": "rohandeshmukh5@gmail.com"
+  },
+  {
+    "role": "alumni",
+    "prn_number": "78241028A",
+    "name": "Isha Chavan",
+    "email": "ishachavan6@outlook.com"
+  },
+  {
+    "role": "teacher",
+    "employe_id": "27751028M",
+    "name": "Aditya Naik",
+    "email": "adityanaik7@gmail.com"
+  },
+  {
+    "role": "student",
+    "prn_number": "78821028C",
+    "name": "Priya Kale",
+    "email": "priyakale8@college.edu"
+  },
+  {
+    "role": "alumni",
+    "prn_number": "78931028B",
+    "name": "Kunal Mishra",
+    "email": "kunalmishra9@yahoo.com"
+  },
+  {
+    "role": "teacher",
+    "employe_id": "27941028R",
+    "name": "Amit Patil",
+    "email": "amitpatil10@gmail.com"
+  },
+  {
+    "role": "student",
+    "prn_number": "78111028X",
+    "name": "Tanvi Ghosh",
+    "email": "tanvighosh11@outlook.com"
+  },
+  {
+    "role": "alumni",
+    "prn_number": "78421028V",
+    "name": "Riya Kadam",
+    "email": "riyakadam12@gmail.com"
+  },
+  {
+    "role": "teacher",
+    "employe_id": "27891028N",
+    "name": "Manish Sharma",
+    "email": "manishsharma13@yahoo.com"
+  },
+  {
+    "role": "student",
+    "prn_number": "78691028E",
+    "name": "Sneha Joshi",
+    "email": "snehajoshi14@college.edu"
+  },
+  {
+    "role": "teacher",
+    "employe_id": "27651028G",
+    "name": "Kritika Reddy",
+    "email": "kritikareddy15@outlook.com"
+  },
+  {
+    "role": "student",
+    "prn_number": "78231028H",
+    "name": "Rohan Pawar",
+    "email": "rohanpawar16@gmail.com"
+  },
+  {
+    "role": "alumni",
+    "prn_number": "78721028L",
+    "name": "Pooja Deshmukh",
+    "email": "poojadeshmukh17@college.edu"
+  }
+]
+

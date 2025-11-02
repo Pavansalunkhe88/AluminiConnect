@@ -129,7 +129,7 @@ export default function LandingPage() {
           {/* Desktop nav links */}
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
             <a
-              href="#"
+              href="/Login"
               className="inline-block px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-colors duration-150"
             >
               Sign In
@@ -142,13 +142,13 @@ export default function LandingPage() {
           <div className="absolute top-full right-0 w-40 bg-white shadow-lg rounded-b-lg z-40">
             <div className="flex flex-col p-4 space-y-3">
               {/* Sign In / Login buttons */}
-              <a
-                href="/signin"
+              <Link
+                to={"/Login"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-gray-700 hover:text-indigo-600 font-medium text-center py-2 border rounded-md"
               >
                 Sign In
-              </a>
+              </Link>
               <a
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
@@ -186,7 +186,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-wrap gap-4">
             <Link
-              to="/Login"
+              to={"/Login"}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
             >
               Get Started
@@ -407,7 +407,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Button size="lg" variant="secondary" className="group">
-                Get Started Now
+                <Link to={"/register"}>Get Started Now</Link>
                 <ArrowRightIcon className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>

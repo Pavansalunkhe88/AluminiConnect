@@ -13,6 +13,18 @@
   },
   {
     "role": "student",
+    "prn_number": "78031098K",
+    "name": "Shahid Inamdar",
+    "email": "shahid@gmail.com"
+  },
+  {
+    "role": "student",
+    "prn_number": "78034598K",
+    "name": "Nitish Patel",
+    "email": "nitish@gmail.com"
+  },
+  {
+    "role": "student",
     "prn_number": "78458998K",
     "name": "Ajinkya Patil",
     "email": "ajinkya@gmail.com"

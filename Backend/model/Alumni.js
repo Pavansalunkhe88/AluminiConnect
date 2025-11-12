@@ -2,11 +2,16 @@ const mongoose = require("mongoose");
 
 const alumniSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
-    password: { type: String, required: true },
-    studentId: { type: String, required: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     profileImage: {
+      type: String,
+      default: "",
+    },
+    coverImage: {
       type: String,
       default: "",
     },
@@ -19,6 +24,7 @@ const alumniSchema = new mongoose.Schema(
         "Electronics and Telecommunication",
         "Mechanical Engineering",
         "Civil Engineering",
+        "Chemical Engineering",
         "Electrical Engineering",
         "Artificial Intelligence and Data Science",
         "Instrumentation Engineering",
@@ -29,7 +35,6 @@ const alumniSchema = new mongoose.Schema(
     currentPosition: { type: String },
     linkedin: { type: String },
     contact: { type: String },
-    role: { type: String, enum: ["alumni"], default: "alumni" },
     skills: { type: [String] },
     achievements: { type: [String] },
     location: { type: String },

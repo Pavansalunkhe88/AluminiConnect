@@ -2,11 +2,16 @@ const mongoose = require("mongoose");
 
 const teacherSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
-    password: { type: String, required: true },
-    employeeId: { type: String, required: true, unique: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     profileImage: {
+      type: String,
+      default: "",
+    },
+    coverImage: {
       type: String,
       default: "",
     },
@@ -43,7 +48,6 @@ const teacherSchema = new mongoose.Schema(
       ],
       required: true,
     },
-    role: { type: String, enum: ["teacher"], default: "teacher" },
     experienceYears: { type: Number },
     qualifications: { type: String },
     isActive: { type: Boolean, default: true },

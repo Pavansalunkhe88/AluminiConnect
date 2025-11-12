@@ -6,9 +6,9 @@ async function handleDeleteTeacher(req, res) {
   res.send(`Delete Teacher with ID: ${id}`);
 }
 
-async function handleGetTeacherProfile(req, res) {
+async function handleGetMyProfile(req, res) {
   try {
-    const id = req.user?.id;
+    const id = req.user.id;
 
     const teacher = await User.findById(id).select("-password -__v");
     if (!teacher)
@@ -92,9 +92,45 @@ async function handleUpdateTeacherProfile(req, res) {
   }
 }
 
+async function handleTeacherProfileDelete(req, res) {
+  try {
+    const id = req.user.id;
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: "Password is required to delete account" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role.toLowerCase() !== "teacher") {
+      return res.status(403).json({ message: "You are not authorized to delete this account" });
+    }
+
+    // Compare entered password with hashed password in DB
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Incorrect password" });
+    }
+
+    // Delete user after password match
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
 module.exports = {
   handleDeleteTeacher,
-  handleGetTeacherProfile,
+  //handleGetTeacherProfile,
   handleGetTeacherProfileToUpdate,
   handleUpdateTeacherProfile,
+  handleTeacherProfileDelete
 };

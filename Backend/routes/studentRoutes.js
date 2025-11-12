@@ -5,7 +5,10 @@ const {
   getStudentById,
   createStudent,
   updateStudent,
-  deleteStudent,
+  handleStudentProfileDelete,
+  handleUpdateStudentProfile,
+  handleGetMyProfile,
+  handleGetUserById
 } = require("../controller/student");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 const { verifyToken } = require("../middlewares/authMiddleware");
@@ -25,13 +28,19 @@ router.use(verifyToken, authorizeRoles("student"));
 // });
 
 // GET: Student profile
-// router.get("/profile", handleGetStudentProfile);
+router.get("/profile/me", handleGetMyProfile);
+ 
+// PUT: Update student profile
+ router.put("/profile/update", handleUpdateStudentProfile);
 
-// // PUT: Update student profile
-// router.put("/profile", handleUpdateStudentProfile);
+// DELETE: Delete student profile
+router.delete('/profile/delete', handleStudentProfileDelete)
 
-// // GET: All events (open to students)
+// GET: All events (open to students)
 // router.get("/events", handleGetAllEvents);
+
+//GET: Specific user by id
+router.get('/user/:id', handleGetUserById);
 
 // // POST: Register for an event
 // router.post("/events/:eventId/register", handleRegisterForEvent);

@@ -1,25 +1,22 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import './index.css'
+import { AuthProvider } from './context/AuthContext';
 import LandingPage from './pages/LandingPage.jsx'
 import Login from './pages/auth/Login.jsx';
 import RegisterPage from './pages/auth/Register.jsx';
+import DashboardLayout from './components/layout/DashboardLayout.jsx';
+import AppRoutes from './routes/AppRoutes.jsx';
 
 function App() {
 
 
   return (
-    <>
     <BrowserRouter>
-     
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<RegisterPage />} />
-        </Routes>
-     
-      </BrowserRouter>
-    </>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 

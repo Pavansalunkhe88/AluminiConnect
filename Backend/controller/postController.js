@@ -1,17 +1,3 @@
-/*
-
-| Function        | Purpose                                        |
-| --------------- | ---------------------------------------------- |
-| `createPost`    | Create a new post                              |
-| `getAllPosts`   | Fetch all posts (feed)                         |
-| `getPostById`   | Get a single post with comments                |
-| `deletePost`    | Allow only the post owner (or admin) to delete |
-| `toggleLike`    | Like/unlike a post                             |
-| `addComment`    | Add a comment                                  |
-| `deleteComment` | Delete own comment (or admin)                  |
-
-*/
-
 const User = require("../model/registerUser/UserScehma");
 const Post = require("../model/Posts");
 const Alumni = require("../model/Alumni");

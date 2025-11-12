@@ -12,7 +12,7 @@ async function handleRegisterUsers(req, res) {
   try {
     const { role, name, prn_number, emp_id, email, password } = req.body;
     console.log("request body :", req.body);
-    const normalizedRole = role.toLowerCase();
+    // const normalizedRole = role.toLowerCase();
     // Basic field check
     if (!role || !name || !email || !password)
       return res.status(400).json({ error: "All fields are required" });
@@ -56,7 +56,8 @@ async function handleRegisterUsers(req, res) {
 
     // Save user
     await User.create({
-      role: normalizedRole,
+      // role: normalizedRole,
+      role,
       name,
       email,
       password: hashed,

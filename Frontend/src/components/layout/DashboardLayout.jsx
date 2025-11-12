@@ -1,22 +1,34 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Card } from '../ui/Card';
 import StudentFeed from '../../pages/student/Feed';
 import StudentProfile from '../../pages/student/Profile';
 import AlumniProfile from '../../pages/alumni/Profile';
+import AlumniFeed from '../../pages/alumni/Feed';
 import TeacherFeed from '../../pages/teacher/Feed';
+import TeacherProfile from '../../pages/teacher/Profile';
 import RoleDashboard from '../Dashboard/RoleDashboard';
 
 const DashboardLayout = ({ children }) => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const role = user?.role?.toLowerCase();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
+  const handleLogout = () => {
+    logout();
+    setShowProfileMenu(false);
+    navigate('/login');
+  };
+
   const getFeedComponent = () => {
     switch (role) {
       case 'student':
         return StudentFeed;
+      case 'alumni':
+        return AlumniFeed;
       case 'teacher':
         return TeacherFeed;
       default:
@@ -35,6 +47,8 @@ const DashboardLayout = ({ children }) => {
         return StudentProfile;
       case 'alumni':
         return AlumniProfile;
+      case 'teacher':
+        return TeacherProfile;
       default:
         return () => (
           <Card className="p-6">
@@ -125,10 +139,7 @@ const DashboardLayout = ({ children }) => {
                       Settings
                     </button>
                     <button
-                      onClick={() => {
-                        logout();
-                        setShowProfileMenu(false);
-                      }}
+                      onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 border-t"
                     >
                       Logout

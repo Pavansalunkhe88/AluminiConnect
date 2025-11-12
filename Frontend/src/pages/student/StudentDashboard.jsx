@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import Card from '../../components/ui/Card';
+import { Card } from '../../components/ui/Card';
 
 const StudentDashboard = () => {
   const { user } = useAuth();

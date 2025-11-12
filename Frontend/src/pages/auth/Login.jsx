@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import Header from "../../components/layout/Header";
 
 const LoginPage = () => {
   const [form, setForm] = useState({
@@ -17,33 +19,70 @@ const LoginPage = () => {
     });
   }
 
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   // Handle form submission
   async function onSubmit(e) {
     e.preventDefault();
+
+    if (!form.role) {
+      setStatus({ error: "Please select a role" });
+      return;
+    }
 
     setStatus("loading");
 
     try {
       const axios = (await import("axios")).default;
-      //const res = await axios.post("/api/login", form);
       
       const res = await axios.post("/api/login", form, {
         headers: { "Content-Type": "application/json" },
         withCredentials: true,
       });
 
-      const data = res.data;
+      const { data } = res;
+      console.log('[Login] Server response:', data);
+      
+      // Extract user and role, considering different response formats
+      const userData = data.user || data;
+      const userRole = userData.role || form.role;
 
-      // Store token and user data
-      if (data.token) localStorage.setItem("token", data.token);
-      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+      if (!userRole) {
+        console.error('Login response:', data);
+        throw new Error("Could not determine user role");
+      }
 
-      setStatus({ success: data.message || "Login successful!" });
+      // Construct complete user object
+      const completeUser = {
+        ...userData,
+        role: userRole
+      };
 
-      // Redirect to dashboard after successful login
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1000);
+      // Store token if provided
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      console.log('[Login] Processed user data:', completeUser);
+      
+      // Update auth context with complete user data
+      await login(completeUser);
+      
+      // Get cleaned role and determine redirect path
+      const role = userRole.toLowerCase();
+      const redirectPath = role === 'admin' 
+        ? '/teacher/admin/dashboard'
+        : `/${role}/dashboard`;
+
+      // Show success message
+      setStatus({ success: "Login successful! Redirecting..." });
+      
+      // Force a synchronous delay before navigation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      console.log('[Login] Navigating to dashboard:', redirectPath);
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       console.log(err.response?.data);
       const message =
@@ -53,11 +92,12 @@ const LoginPage = () => {
   }
 
   return (
-    
-    <div className="min-h-screen bg-white py-8 px-4">
-      <div className="max-w-md mx-auto">
-        {/* Header Card */}
-        <div className="bg-gray-50 rounded-lg shadow-md p-8 mb-6">
+    <>
+      <Header />
+      <div className="min-h-screen bg-white py-8 px-4">
+        <div className="max-w-md mx-auto">
+          {/* Header Card */}
+        <div className="bg-gray-50 rounded-lg shadow-md p-8 mb-6 mt-12">
           <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
             Welcome Back
           </h1>
@@ -171,6 +211,7 @@ const LoginPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

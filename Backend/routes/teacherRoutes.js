@@ -8,14 +8,11 @@ const {
   deleteTeacher,
   handleGetTeacherProfile,
   handleGetTeacherProfileToUpdate,
-  handleUpdateTeacherProfile
+  handleUpdateTeacherProfile,
+  handleTeacherProfileDelete
 } = require("../controller/teacher");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
-
-
-// router.post("/register", handleRegisterTeacher);
-// router.post("/login", handleTeacherLogin);
 
 router.use(verifyToken, authorizeRoles("teacher", "admin"));
 
@@ -25,9 +22,11 @@ router.use(verifyToken, authorizeRoles("teacher", "admin"));
 // router.put("/:id", updateTeacher);
 // router.delete("/:id", deleteTeacher);
 
-router.get("/profile", handleGetTeacherProfile);
+//router.get("/profile", handleGetTeacherProfile);
 router.get("/profile/update", handleGetTeacherProfileToUpdate)
 router.put("/profile/update", handleUpdateTeacherProfile);
+router.delete('/profile/delete', handleTeacherProfileDelete);
+//router.get("/users/:id", handleGetTeacherProfile);
 
 // Admin-only routes
 // router.get("/all", handleGetAllTeachers);

@@ -2,14 +2,19 @@ const mongoose = require("mongoose");
 
 const adminSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
-    password: { type: String, required: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     profileImage: {
       type: String,
       default: "",
     },
-    role: { type: String, enum: ["admin", "super-admin"], default: "admin" },
+    coverImage: {
+      type: String,
+      default: "",
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
@@ -21,8 +26,8 @@ const adminSchema = new mongoose.Schema(
     permissions: {
       type: [String],
       enum: ["manageStudents", "manageTeachers", "manageAlumni", "viewReports"],
-      default: ["manageStudents", "manageTeachers", "manageAlumni"], 
-    }
+      default: ["manageStudents", "manageTeachers", "manageAlumni"],
+    },
   },
   { timestamps: true }
 );

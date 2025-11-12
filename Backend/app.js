@@ -14,6 +14,7 @@ const alumniRoutes = require("./routes/alumniRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
 const loginRegister = require("./routes/loginRegisterRoutes");
+const postRoutes = require('./routes/postRoutes')
 
 const port = 4000;
 
@@ -39,6 +40,7 @@ app.use(express.json({ limit: "10kb" }));
 //console.log(loginRegister);
 
 app.use("/api", loginRegister);
+app.use("api/post", postRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);

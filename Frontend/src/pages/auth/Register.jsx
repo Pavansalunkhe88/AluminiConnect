@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 // import './index.css'
 import { Link } from 'react-router-dom'
+import Header from '../../components/layout/Header'
 
 const RegisterPage = () => {
   const [form, setForm] = useState({
@@ -72,9 +73,14 @@ const RegisterPage = () => {
         payload.emp_id = form.emp_id;
       }
 
-      // use axios
+      // use axios with proper config
       const axios = (await import('axios')).default;
-      const res = await axios.post('/api/register', payload);
+      const res = await axios.post('/api/register', payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
+      });
 
       setStatus({ success: res.data.message || 'Registration successful!' });
 
@@ -90,7 +96,9 @@ const RegisterPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white py-8 px-4">
+    <>
+    <Header />
+    <div className="min-h-screen bg-white py-8 px-4 mt-15">
       <div className="max-w-md mx-auto">
         {/* Header Card */}
         <div className="bg-gray-50 rounded-lg shadow-md p-8 mb-6">
@@ -277,6 +285,7 @@ const RegisterPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

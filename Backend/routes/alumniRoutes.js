@@ -23,7 +23,7 @@ router.get("/dashboard", handleGetDashboardData);
 
 //  Profile
 router.get("/profile", handleGetProfile);
-router.put("/profile", handleUpdateAlumniProfile);
+router.put("/profile", handleInsertDataToAlumniModel);
 router.delete("/profile", handleDeleteAlumni);
 
 // Jobs

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const DEPARTMENTS = require("../constants/departments")
 
 const alumniSchema = new mongoose.Schema(
   {
@@ -7,42 +8,35 @@ const alumniSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    profileImage: {
-      type: String,
-      default: "",
-    },
-    coverImage: {
-      type: String,
-      default: "",
-    },
-    graduationYear: { type: String, required: true },
+    profileImage: { type: String, default: "" },
+    coverImage: { type: String, default: "" },
+
+    graduationYear: { type: Number, required: true },  
+
     department: {
       type: String,
-      enum: [
-        "Computer Science and Engineering",
-        "Information Technology",
-        "Electronics and Telecommunication",
-        "Mechanical Engineering",
-        "Civil Engineering",
-        "Chemical Engineering",
-        "Electrical Engineering",
-        "Artificial Intelligence and Data Science",
-        "Instrumentation Engineering",
-      ],
+      enum: DEPARTMENTS,
       required: true,
     },
-    currentCompany: { type: String },
-    currentPosition: { type: String },
-    linkedin: { type: String },
-    contact: { type: String },
-    skills: { type: [String] },
-    achievements: { type: [String] },
-    location: { type: String },
+
+    currentCompany: { type: String, default: "" },
+    currentPosition: { type: String, default: "" },
+    bio: { type: String, default: "" },
+
+    linkedin: { type: String, default: "" },
+    contact: { type: String, default: "" },
+    location: { type: String, default: "" },
+
+    skills: { type: [String], default: [] },
+    achievements: { type: [String], default: [] },
+    contributions: { type: [String], default: [] },
+
     isActive: { type: Boolean, default: true },
     verified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
+
 
 const Alumni = mongoose.model("Alumni", alumniSchema);
 

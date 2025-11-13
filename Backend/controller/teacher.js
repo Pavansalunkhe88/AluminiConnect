@@ -1,5 +1,7 @@
 const User = require("../model/registerUser/UserScehma");
 const bcrypt = require("bcrypt");
+const Teacher = require("../model/Teacher");
+const { handleAddRemoveArray } = require("../utils/profileDataArray");
 
 async function handleDeleteTeacher(req, res) {
   const { id } = req.params;
@@ -24,18 +26,72 @@ async function handleGetMyProfile(req, res) {
   }
 }
 
-async function handleGetTeacherProfileToUpdate(req, res) {
-  try {
-    const id = req.user?.id;
-    const teacher = await User.findById(id).select("-password -__v");
-    if (!teacher) return res.status(404).json({ message: "Teacher not found" });
+// async function handleGetTeacherProfileToUpdate(req, res) {
+//   try {
+//     const id = req.user?.id;
+//     const teacher = await User.findById(id).select("-password -__v");
+//     if (!teacher) return res.status(404).json({ message: "Teacher not found" });
 
-    res.status(200).json({
-      message: "Teacher data fetched successfully for update",
-      teacher,
+//     res.status(200).json({
+//       message: "Teacher data fetched successfully for update",
+//       teacher,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// }
+
+async function handleInsertDataToTacherModel(req, res) {
+  try {
+    const userId = req.user.id;
+    const role = req.user.role;
+
+    if (role !== "Teacher") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    let teacher = await Teacher.findOne({ user: userId });
+
+    if (!teacher) {
+      teacher = new Teacher({ user: userId });
+    }
+
+    if (teacher.user.toString() !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const allowed = [
+      "profileImage",
+      "coverImage",
+      "designation",
+      "contact",
+      "department",
+      "experienceYears",
+      "qualifications",
+      "bio",
+      "location",
+    ];
+
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined && req.body[field] !== "") {
+        teacher[field] = req.body[field];
+      }
     });
+
+    // Specializations is an array
+    if (req.body.specialization) {
+      teacher.specialization = handleAddRemoveArray(
+        teacher.specialization || [],
+        req.body.specialization
+      );
+    }
+
+    await teacher.save();
+
+    res.status(200).json({ message: "Profile updated", profile: teacher });
   } catch (err) {
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("Teacher Update Error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 }
 
@@ -43,7 +99,9 @@ async function handleUpdateTeacherProfile(req, res) {
   try {
     const id = req.user?.id;
     if (!id) {
-      return res.status(401).json({ message: "Unauthorized: No user ID found" });
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: No user ID found" });
     }
 
     const teacher = await User.findById(id).select("-password -__v");
@@ -68,8 +126,8 @@ async function handleUpdateTeacherProfile(req, res) {
       }
     }
 
-    if(email) teacher.email = email;
-    if(name) teacher.name = name;
+    if (email) teacher.email = email;
+    if (name) teacher.name = name;
 
     if (password) {
       // Hash password securely
@@ -98,7 +156,9 @@ async function handleTeacherProfileDelete(req, res) {
     const { password } = req.body;
 
     if (!password) {
-      return res.status(400).json({ message: "Password is required to delete account" });
+      return res
+        .status(400)
+        .json({ message: "Password is required to delete account" });
     }
 
     const user = await User.findById(id);
@@ -107,7 +167,9 @@ async function handleTeacherProfileDelete(req, res) {
     }
 
     if (user.role.toLowerCase() !== "teacher") {
-      return res.status(403).json({ message: "You are not authorized to delete this account" });
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to delete this account" });
     }
 
     // Compare entered password with hashed password in DB
@@ -168,7 +230,7 @@ async function handleGetDashboardData(req, res) {
 module.exports = {
   handleDeleteTeacher,
   //handleGetTeacherProfile,
-  handleGetTeacherProfileToUpdate,
+  //handleGetTeacherProfileToUpdate,
   handleUpdateTeacherProfile,
   handleTeacherProfileDelete,
   handleGetDashboardData

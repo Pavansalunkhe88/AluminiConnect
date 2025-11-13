@@ -1,10 +1,12 @@
 const User = require("../model/registerUser/UserScehma");
 const bcrypt = require("bcrypt");
+const Student = require("../model/Student");
+const { handleAddRemoveArray } = require("../utils/profileDataArray");
 
 async function handleUpdateStudentProfile(req, res) {
   try {
     const id = req.user?.id;
-    
+
     const student = await User.findById(id);
     if (!student) return res.status(404).json({ message: "Student not found" });
 
@@ -37,6 +39,76 @@ async function handleUpdateStudentProfile(req, res) {
     res
       .status(500)
       .json({ message: "Internal server error", error: err.message });
+  }
+}
+
+async function handleInsertDataToStudentModel(req, res) {
+  try {
+    const userId = req.user.id;
+    const role = req.user.role;
+
+    // Only students can update this profile
+    if (role !== "Student") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    // Check if student profile already exists
+    let student = await Student.findOne({ user: userId });
+
+    // If profile does not exist → create
+    if (!student) {
+      student = new Student({ user: userId });
+    }
+
+    // Ownership validation (extra safety)
+    if (student.user.toString() !== userId) {
+      return res.status(403).json({ message: "Not allowed to modify profile" });
+    }
+
+    // Allowed fields for update
+    const allowedFields = [
+      "profileImage",
+      "coverImage",
+      "department",
+      "batch",
+      "course",
+      "address",
+      "contact",
+      "location",
+      "bio",
+    ];
+
+    // Update simple fields only if provided
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined && req.body[field] !== "") {
+        student[field] = req.body[field];
+      }
+    });
+
+    // Array fields (skills + achievements)
+    if (req.body.skills) {
+      student.skills = handleAddRemoveArray(
+        student.skills || [],
+        req.body.skills
+      );
+    }
+
+    if (req.body.achievements) {
+      student.achievements = handleAddRemoveArray(
+        student.achievements || [],
+        req.body.achievements
+      );
+    }
+
+    await student.save();
+
+    res.status(200).json({
+      message: "Student profile updated successfully",
+      profile: student,
+    });
+  } catch (err) {
+    console.error("Error updating student profile:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 }
 
@@ -115,14 +187,15 @@ async function handleGetUserById(req, res) {
 //   }
 // }
 
-
 async function handleStudentProfileDelete(req, res) {
   try {
     const id = req.user.id;
     const { password } = req.body;
 
     if (!password) {
-      return res.status(400).json({ message: "Password is required to delete account" });
+      return res
+        .status(400)
+        .json({ message: "Password is required to delete account" });
     }
 
     const user = await User.findById(id);
@@ -131,7 +204,9 @@ async function handleStudentProfileDelete(req, res) {
     }
 
     if (user.role.toLowerCase() !== "student") {
-      return res.status(403).json({ message: "You are not authorized to delete this account" });
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to delete this account" });
     }
 
     // Compare entered password with hashed password in DB

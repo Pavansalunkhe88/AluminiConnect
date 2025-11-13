@@ -26,7 +26,7 @@ const postSchema = new mongoose.Schema({
   },
   image: {
     url: String,
-    public_id: String, // optional image URL or Cloudinary link
+    public_id: String, 
   },
   likes: [
     {
@@ -54,17 +54,3 @@ const postSchema = new mongoose.Schema({
 const Post = mongoose.model("Post", postSchema);
 
 module.exports = Post;
-
-/*
-
-| Route                               | Method     | Description                |
-| ----------------------------------- | ---------- | -------------------------- |
-| `/api/posts/`                       | **POST**   | Create a new post          |
-| `/api/posts/`                       | **GET**    | Get all posts (feed)       |
-| `/api/posts/:id`                    | **GET**    | Get a single post          |
-| `/api/posts/:id`                    | **DELETE** | Delete post (only owner)   |
-| `/api/posts/:id/like`               | **PUT**    | Toggle like/unlike         |
-| `/api/posts/:id/comment`            | **POST**   | Add comment                |
-| `/api/posts/:id/comment/:commentId` | **DELETE** | Delete comment (if author) |
-
-*/

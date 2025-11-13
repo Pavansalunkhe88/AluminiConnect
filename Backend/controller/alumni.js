@@ -1,5 +1,7 @@
 const User = require("../model/registerUser/UserScehma");
 const bcrypt = require("bcrypt");
+const Alumni = require("../model/Alumni");
+const { handleAddRemoveArray } = require("../utils/profileDataArray");
 
 async function getAllAlumni(req, res) {
   res.send("Get all Alumni");
@@ -28,7 +30,7 @@ async function handleUpdateAlumniProfile(req, res) {
       return res
         .status(403)
         .json({ message: "You are not authorized to perform this action" });
-      
+
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
@@ -48,7 +50,6 @@ async function handleUpdateAlumniProfile(req, res) {
 
     const { password: _, __v, ...safeAlumni } = alumni.toObject();
 
-
     res.status(200).json({
       message: "Alumni updated sucessfully",
       alumni: safeAlumni,
@@ -57,6 +58,82 @@ async function handleUpdateAlumniProfile(req, res) {
     res
       .status(500)
       .json({ message: "Something went wrong", error: err.message });
+  }
+}
+
+async function handleInsertDataToAlumniModel(req, res) {
+  try {
+    const userId = req.user.id; // from JWT
+    const role = req.user.role;
+
+    // Only alumni role can modify this profile
+    if (role !== "Alumni") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    // Check if alumni profile already exists
+    let alumni = await Alumni.findOne({ user: userId });
+
+    // If profile does not exist -> create
+    if (!alumni) {
+      alumni = new Alumni({ user: userId });
+    }
+
+    // Ownership check (extra safety)
+    if (alumni.user.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "You are not allowed to modify this profile" });
+    }
+
+    // Fields allowed to update
+    const allowedFields = [
+      "profileImage",
+      "coverImage",
+      "graduationYear",
+      "department",
+      "currentCompany",
+      "currentPosition",
+      "linkedin",
+      "contact",
+      "location",
+      "bio",
+    ];
+
+    // Update simple fields
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined && req.body[field] !== "") {
+        alumni[field] = req.body[field];
+      }
+    });
+
+    // Handle arrays with "add-remove" logic
+    if (req.body.skills) {
+      alumni.skills = handleAddRemoveArray(alumni.skills || [], req.body.skills);
+    }
+    if (req.body.achievements) {
+      alumni.achievements = handleAddRemoveArray(
+        alumni.achievements || [],
+        req.body.achievements
+      );
+    }
+    if (req.body.contributions) {
+      alumni.contributions = handleAddRemoveArray(
+        alumni.contributions || [],
+        req.body.contributions
+      );
+    }
+
+    // Save new/updated profile
+    await alumni.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      profile: alumni,
+    });
+  } catch (err) {
+    console.error("Error updating alumni profile:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 }
 

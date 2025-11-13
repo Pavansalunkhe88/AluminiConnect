@@ -67,10 +67,10 @@ const AppRoutes = () => {
       {/* Dashboard redirect */}
       <Route path="/dashboard" element={<DashboardRedirect />} />
 
-      {/* Testing edit form */}
+      {/* Profile Setup Routes */}
       <Route path="/student/profile-setup" element={<StudentProfileEdit />} />
-      <Route path="/alumini/profile-setup" element={<AlumniProfileEdit />} />
-      <Route path="/student/profile-setup" element={<TeacherProfileEdit />} />
+      <Route path="/alumni/profile-setup" element={<AlumniProfileEdit />} />
+      <Route path="/teacher/profile-setup" element={<TeacherProfileEdit />} />
 
       {/* Role-based Routes */}
       <Route

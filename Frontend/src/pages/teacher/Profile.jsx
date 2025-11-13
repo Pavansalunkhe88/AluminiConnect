@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Card } from "../../components/ui/Card";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const TeacherProfile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -97,6 +99,14 @@ const TeacherProfile = () => {
               <p className="text-sm">{profile.college}</p>
             </div>
           </div>
+         
+         <button
+           onClick={() => navigate('/teacher/profile-setup')}
+           className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium"
+         >
+            Edit Profile
+          </button>
+
         </div>
 
         {/* Main Info */}

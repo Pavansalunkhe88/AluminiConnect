@@ -4,7 +4,8 @@ const {
   handleUpdateAlumniProfile,
   handleDeleteAlumni,
   handleGetProfile,
-  handleGetUserById
+  handleGetUserById,
+  handleGetDashboardData
 } = require("../controller/alumni");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
@@ -17,9 +18,8 @@ router.use(verifyToken, authorizeRoles("alumni"));
 // router.put("/:id", updateAlumni);
 // router.delete("/:id", deleteAlumni);
 
-// router.get("/dashboard", (req, res) => {
-//   res.send("welcome to Alumni Dashboard");
-// });
+// GET: Alumni dashboard data
+router.get("/dashboard", handleGetDashboardData);
 
 //  Profile
 router.get("/profile", handleGetProfile);

@@ -4,10 +4,13 @@ import { useAuth } from '../../hooks/useAuth';
 import { Card } from '../ui/Card';
 import StudentFeed from '../../pages/student/Feed';
 import StudentProfile from '../../pages/student/Profile';
+import StudentMessages from '../../pages/student/Messages';
 import AlumniProfile from '../../pages/alumni/Profile';
 import AlumniFeed from '../../pages/alumni/Feed';
+import AlumniMessages from '../../pages/alumni/Messages';
 import TeacherFeed from '../../pages/teacher/Feed';
 import TeacherProfile from '../../pages/teacher/Profile';
+import TeacherMessages from '../../pages/teacher/Messages';
 import RoleDashboard from '../Dashboard/RoleDashboard';
 
 const DashboardLayout = ({ children }) => {
@@ -54,6 +57,24 @@ const DashboardLayout = ({ children }) => {
           <Card className="p-6">
             <h2 className="text-2xl font-bold mb-4">Profile</h2>
             <p className="text-gray-600">Profile settings coming soon</p>
+          </Card>
+        );
+    }
+  };
+
+  const getMessagesComponent = () => {
+    switch (role) {
+      case 'student':
+        return StudentMessages;
+      case 'alumni':
+        return AlumniMessages;
+      case 'teacher':
+        return TeacherMessages;
+      default:
+        return () => (
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold mb-4">Messages</h2>
+            <p className="text-gray-600">No messages available for this role</p>
           </Card>
         );
     }
@@ -170,10 +191,9 @@ const DashboardLayout = ({ children }) => {
             </Card>
           )}
           {activeTab === 'messages' && (
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Messages</h2>
-              <p className="text-gray-600">Your messages will appear here</p>
-            </Card>
+            <div key="messages">
+              {React.createElement(getMessagesComponent())}
+            </div>
           )}
           {activeTab === 'notifications' && (
             <Card className="p-6">

@@ -1,38 +1,65 @@
-import React, { useState } from 'react';
-import { Card } from './Card';
+import React, { useState } from "react";
+import { Card } from "./Card";
 
 const CreatePost = ({ onSubmit }) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [image, setImage] = useState(null);
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (title.trim() && content.trim()) {
-      onSubmit({
-        title,
-        content,
-        image,
-        tags: tags.split(',').map(tag => tag.trim()).filter(Boolean)
-      });
-      setTitle('');
-      setContent('');
+
+    //   if (title.trim() && content.trim()) {
+    //     onSubmit({
+    //       title,
+    //       content,
+    //       image,
+    //       tags: tags.split(',').map(tag => tag.trim()).filter(Boolean)
+    //     });
+    //     setTitle("");
+    //     setContent("");
+    //     setImage(null);
+    //     setTags("");
+    //     setIsExpanded(false);
+    //   }
+
+    if (content.trim()) {
+      const formData = new FormData();
+      formData.append("content", content);
+
+      if (image instanceof File) {
+        formData.append("image", image);
+      }
+
+      //formData.append("tags", tags);
+
+      onSubmit(formData);
+
+      setTitle("");
+      setContent("");
       setImage(null);
-      setTags('');
+      setTags("");
       setIsExpanded(false);
     }
   };
 
+  // const handleImageChange = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => {
+  //       setImage(reader.result);
+  //     };
+  //     reader.readAsDataURL(file);
+  //   }
+  // };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+      setImage(file);
     }
   };
 
@@ -44,7 +71,9 @@ const CreatePost = ({ onSubmit }) => {
             onClick={() => setIsExpanded(true)}
             className="p-3 border border-gray-200 rounded-lg cursor-text hover:bg-gray-50"
           >
-            <p className="text-gray-500">Share something with the community...</p>
+            <p className="text-gray-500">
+              Share something with the community...
+            </p>
           </div>
         ) : (
           <>
@@ -70,9 +99,30 @@ const CreatePost = ({ onSubmit }) => {
               className="w-full px-3 py-2 border border-gray-200 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
+            {/* {image && (
+              <div className="relative mb-3">
+                <img
+                  src={image}
+                  alt="Preview"
+                  className="max-h-48 rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => setImage(null)}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                >
+                  ×
+                </button>
+              </div>
+            )} */}
+
             {image && (
               <div className="relative mb-3">
-                <img src={image} alt="Preview" className="max-h-48 rounded-lg" />
+                <img
+                  src={URL.createObjectURL(image)}
+                  alt="Preview"
+                  className="max-h-48 rounded-lg"
+                />
                 <button
                   type="button"
                   onClick={() => setImage(null)}
@@ -94,7 +144,10 @@ const CreatePost = ({ onSubmit }) => {
                   />
                   📷 Photo
                 </label>
-                <button type="button" className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                <button
+                  type="button"
+                  className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
                   📎 Attachment
                 </button>
               </div>

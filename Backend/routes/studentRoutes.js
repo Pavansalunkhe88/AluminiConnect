@@ -8,7 +8,8 @@ const {
   handleStudentProfileDelete,
   handleUpdateStudentProfile,
   handleGetMyProfile,
-  handleGetUserById
+  handleGetUserById,
+  handleGetDashboardData
 } = require("../controller/student");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 const { verifyToken } = require("../middlewares/authMiddleware");
@@ -23,13 +24,12 @@ router.use(verifyToken, authorizeRoles("student"));
 //   .put(updateStudent)
 //   .delete(deleteStudent);
 
-// router.get("/dashboard", (req, res) => {
-//   res.send("welcome to Student Dashboard");
-// });
+// GET: Student dashboard data
+router.get("/dashboard", handleGetDashboardData);
 
 // GET: Student profile
 router.get("/profile/me", handleGetMyProfile);
- 
+
 // PUT: Update student profile
  router.put("/profile/update", handleUpdateStudentProfile);
 

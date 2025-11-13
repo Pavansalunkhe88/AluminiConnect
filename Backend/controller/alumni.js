@@ -118,6 +118,44 @@ async function handleGetProfile(req, res) {
 //   res.send(`Delete Alumni with ID: ${id}`);
 // }
 
+async function handleGetDashboardData(req, res) {
+  try {
+    const userId = req.user.id;
+
+    // Mock dynamic data - in real app, this would come from database
+    const dashboardData = {
+      stats: [
+        { label: "Students Mentored", value: Math.floor(Math.random() * 10) + 1 },
+        { label: "Events Hosted", value: Math.floor(Math.random() * 5) + 1 },
+        { label: "Resources Shared", value: Math.floor(Math.random() * 20) + 1 },
+        { label: "Network Size", value: Math.floor(Math.random() * 150) + 50 }
+      ],
+      activities: [
+        {
+          type: "mentorship",
+          title: "New Mentee",
+          description: "Started mentoring a student",
+          timestamp: "3 hours ago"
+        },
+        {
+          type: "post",
+          title: "Career Insight",
+          description: "Posted about industry trends",
+          timestamp: "2 days ago"
+        }
+      ]
+    };
+
+    res.status(200).json({
+      message: "Dashboard data retrieved successfully",
+      data: dashboardData
+    });
+  } catch (err) {
+    console.error("Error fetching dashboard data:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 module.exports = {
   getAllAlumni,
   getAlumniById,
@@ -126,5 +164,5 @@ module.exports = {
   handleDeleteAlumni,
   handleGetUserById,
   handleGetProfile,
-  handleGetUserById
+  handleGetDashboardData
 };

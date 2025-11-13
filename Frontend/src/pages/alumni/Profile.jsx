@@ -100,6 +100,11 @@ const AlumniProfile = () => {
               <p className="text-sm">{profile.college}</p>
             </div>
           </div>
+          
+          <button className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium">
+            Edit Profile
+          </button>
+
         </div>
 
         {/* Main Info */}

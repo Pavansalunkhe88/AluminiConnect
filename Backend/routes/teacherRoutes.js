@@ -23,7 +23,7 @@ router.use(verifyToken, authorizeRoles("teacher", "admin"));
 // router.delete("/:id", deleteTeacher);
 
 //router.get("/profile", handleGetTeacherProfile);
-router.get("/profile/update", handleGetTeacherProfileToUpdate)
+//router.get("/profile/update", handleGetTeacherProfileToUpdate)
 router.put("/profile/update", handleUpdateTeacherProfile);
 router.delete('/profile/delete', handleTeacherProfileDelete);
 //router.get("/users/:id", handleGetTeacherProfile);

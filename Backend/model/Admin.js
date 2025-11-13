@@ -17,7 +17,7 @@ const adminSchema = new mongoose.Schema(
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Admin",
+      ref: "SuperAdmin",
       default: null,
     },
     verified: { type: Boolean, default: true },

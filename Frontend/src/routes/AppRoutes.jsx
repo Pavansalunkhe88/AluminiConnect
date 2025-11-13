@@ -12,6 +12,9 @@ import TeacherFeed from '../pages/teacher/Feed';
 import TeacherProfile from '../pages/teacher/Profile';
 import ManageUser from '../pages/teacher/ManageUser';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import StudentProfileEdit from '../pages/student/ProfileSetup';
+import AlumniProfileEdit from '../pages/alumni/ProfileSetup';
+import TeacherProfileEdit from '../pages/teacher/ProfileSetup';
 
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading, isAuthenticated } = useAuth();
@@ -59,8 +62,15 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
+      
+
       {/* Dashboard redirect */}
       <Route path="/dashboard" element={<DashboardRedirect />} />
+
+      {/* Testing edit form */}
+      <Route path="/student/profile-setup" element={<StudentProfileEdit />} />
+      <Route path="/alumini/profile-setup" element={<AlumniProfileEdit />} />
+      <Route path="/student/profile-setup" element={<TeacherProfileEdit />} />
 
       {/* Role-based Routes */}
       <Route

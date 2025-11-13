@@ -20,7 +20,7 @@ const FeedPost = ({
     }
   };
 
-  console.log("comment.user:", comment.user);
+  console.log("comment.user:", comment._id);
   console.log("currentUser._id:", currentUser._id);
   console.log("currentUser.role:", currentUser.role);
 

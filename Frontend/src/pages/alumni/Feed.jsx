@@ -53,21 +53,6 @@ const Feed = () => {
     }
   };
 
-  // const handleLike = (postId) => {
-  //   setPosts(
-  //     posts.map((post) => {
-  //       if (post.id === postId) {
-  //         return {
-  //           ...post,
-  //           likes: post.isLiked ? post.likes - 1 : post.likes + 1,
-  //           isLiked: !post.isLiked,
-  //         };
-  //       }
-  //       return post;
-  //     })
-  //   );
-  // };
-
   const handleLike = async (postId) => {
     try {
       const res = await axios.post(
@@ -92,31 +77,7 @@ const Feed = () => {
       console.error("Error liking post:", err.response?.data || err.message);
     }
   };
-
-  // const handleComment = (postId, comment) => {
-  //   setPosts(
-  //     posts.map((post) => {
-  //       if (post._id === postId) {
-  //         return {
-  //           ...post,
-  //           comments: [
-  //             ...post.comments,
-  //             {
-  //               author: {
-  //                 name: post.authorName,
-  //                 avatar: post.authorProfileImage,
-  //               },
-  //               content: comment,
-  //               timestamp: "Just now",
-  //             },
-  //           ],
-  //         };
-  //       }
-  //       return post;
-  //     })
-  //   );
-  // };
-
+  
   const handleComment = async (postId, commentText) => {
     try {
       const res = await axios.post(

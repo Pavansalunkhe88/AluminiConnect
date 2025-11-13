@@ -103,7 +103,10 @@ async function handleUserLogin(req, res) {
     }
 
     // Check if user exists
-    const user = await User.findOne({ email, role: { $regex: new RegExp(`^${role}$`, "i") }, });
+    const user = await User.findOne({
+      email,
+      role: { $regex: new RegExp(`^${role}$`, "i") },
+    });
     if (!user) {
       return res.status(400).json({ message: "Invalid email" });
     }
@@ -150,7 +153,12 @@ async function handleUserLogin(req, res) {
 
     return res.status(200).json({
       message: `Welcome back ${user.name}`,
-      role: user.role,
+      user: {
+        _id: user._id,
+        name: user.name,
+        role: user.role,
+        // email: user.email,
+      },
       token,
     });
   } catch (err) {
@@ -170,8 +178,6 @@ async function handleUserLogin(req, res) {
 //       .json({ message: "Server error", error: err.message });
 //   }
 // }
-
-
 
 async function getLoginPage(req, res) {
   res.send("Welcome to Login Page");

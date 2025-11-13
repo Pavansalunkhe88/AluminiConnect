@@ -40,7 +40,7 @@ app.use(express.json({ limit: "10kb" }));
 //console.log(loginRegister);
 
 app.use("/api", loginRegister);
-app.use("api/post", postRoutes);
+app.use("/api/post", postRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);

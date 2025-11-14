@@ -7,7 +7,7 @@ const {
   handleGetProfile,
   handleGetUserById,
   handleInsertDataToAlumniModel,
-  handleGetAlumniProfile
+  handleGetAlumniProfile,
 } = require("../controller/alumni");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
@@ -17,6 +17,33 @@ router.use(verifyToken, authorizeRoles("Alumni"));
 // Everyone (students, teachers, alumni, admins) can view alumni
 //router.get("/", handleGetAllAlumni);
 //router.get("/:id", handleGetUserById);
+
+router.get("/dashboard", (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: {
+      stats: [
+        { label: "Events Attended", value: 12 },
+        { label: "Alumni Connections", value: 45 },
+        { label: "Projects Completed", value: 8 },
+      ],
+      activities: [
+        {
+          type: "connection",
+          title: "New Connection",
+          description: "Connected with John Doe",
+          timestamp: "2 hours ago",
+        },
+        {
+          type: "event",
+          title: "Event Registration",
+          description: "Registered for Workshop",
+          timestamp: "1 day ago",
+        },
+      ],
+    },
+  });
+});
 
 //  Profile
 router.get("/profile", handleGetAlumniProfile);

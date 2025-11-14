@@ -67,8 +67,15 @@ const teacherSchema = new mongoose.Schema(
       required: true,
     },
 
-    profileImage: { type: String, default: "" },
-    coverImage: { type: String, default: "" },
+    profileImage: {
+      url: String,
+      public_id: String,
+      
+    },
+    coverImage: {
+      url: String,
+      public_id: String,
+    },
 
     designation: { type: String, default: "" },
     contact: { type: String, default: "" },
@@ -84,6 +91,13 @@ const teacherSchema = new mongoose.Schema(
       default: [],
     },
 
+    achievements: [
+      {
+        type: String,
+      },
+    ],
+
+    bio: { type: String, default: "" },
     experienceYears: { type: Number, default: 0 },
     qualifications: { type: String, default: "" },
 

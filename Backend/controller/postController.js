@@ -194,7 +194,7 @@ async function handleCreatePost(req, res) {
         break;
     }
 
-    // ✅ image upload now happens independently
+    // image upload now happens independently
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(req.file.path, {
         folder: "alumni_posts",
@@ -221,7 +221,7 @@ async function handleCreatePost(req, res) {
       user: id,
       role: user.role,
       authorName: user.name,
-      authorProfileImage, // ✅ now safely defined
+      authorProfileImage, // now safely defined
       content: content.trim(),
       image: imageData,
     });

@@ -9,6 +9,7 @@ const AlumniProfile = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
 
   // -------- Dummy Alumni Data (Fallback) --------
   const dummyAlumni = {
@@ -34,40 +35,55 @@ const AlumniProfile = () => {
   };
 
   // ---------- BACKEND FETCH ----------
-  useEffect(() => {
+
+   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        const token = localStorage.getItem("token");
+
         const res = await axios.get(
-          `http://localhost:5000/api/alumni/${user?.alumniId}`
+          "http://localhost:4000/api/alumni/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
 
-        // If backend returns valid data
-        if (res.data && res.data.name) {
-          setProfile(res.data);
-        } else {
-          setProfile(dummyAlumni);
-        }
+        setProfile(res.data);
       } catch (err) {
-        console.error("Backend offline → using dummy alumni:", err);
+        console.error("Backend offline → using dummy teacher profile.", err);
         setProfile(dummyAlumni);
       } finally {
         setLoading(false);
       }
     };
 
-    if (user?.alumniId) fetchProfile();
-    else {
-      // If user has no alumniId in auth, load dummy
-      setProfile(dummyAlumni);
-      setLoading(false);
-    }
-  }, [user]);
+    fetchProfile();
+  }, []);
 
   // ---------- LOADING ----------
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen text-gray-600">
         Loading profile...
+      </div>
+    );
+  }
+
+  //Conditional Rendering
+  if (editing) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-10">
+        <div className="flex justify-center">
+          <button
+            onClick={() => setEditing(false)}
+            className="mb-6 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+          >
+            ← Back to Profile
+          </button>
+        </div>
+        <AlumniProfileForm /> {/* Render the form here */}
       </div>
     );
   }
@@ -79,27 +95,35 @@ const AlumniProfile = () => {
         
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-32 relative">
+          {profile?.coverImage?.url && (
+            <img
+              src={profile.coverImage.url}
+              className="absolute top-0 left-0 w-full h-full object-cover opacity-70"
+              alt="Cover"
+            />
+          )}
+
           <div className="absolute -bottom-10 left-10 flex items-center">
 
-            {profile.profileImage ? (
+            {profile?.profileImage?.url? (
               <img
-                src={profile.profileImage}
+                src={profile.profileImage.url}
                 alt="Alumni"
                 className="w-20 h-20 rounded-full border-4 border-white object-cover"
               />
             ) : (
               <div className="bg-blue-600 text-white rounded-full w-20 h-20 flex items-center justify-center 
                 text-2xl font-bold border-4 border-white">
-                {profile.name.charAt(0)}
+                {profile?.name?.charAt(0)}
               </div>
             )}
 
             <div className="ml-4 text-white">
-              <h2 className="text-xl font-semibold">{profile.name}</h2>
+              <h2 className="text-xl font-semibold">{profile?.name}</h2>
               <p className="text-sm">
-                {profile.graduationYear ? `Batch of ${profile.graduationYear}` : "Graduate"}
+                {profile.graduationYear ? `Batch of ${profile?.graduationYear}` : "Graduate"}
               </p>
-              <p className="text-sm">{profile.college}</p>
+              <p className="text-sm">{profile?.college}</p>
             </div>
           </div>
           
@@ -118,27 +142,27 @@ const AlumniProfile = () => {
 
             <div>
               <h3 className="text-gray-500 text-xs font-semibold uppercase">Email</h3>
-              <p className="text-gray-800 font-medium">{profile.email}</p>
+              <p className="text-gray-800 font-medium">{profile?.email}</p>
             </div>
 
             <div>
               <h3 className="text-gray-500 text-xs font-semibold uppercase">Department</h3>
-              <p className="text-gray-800 font-medium">{profile.department}</p>
+              <p className="text-gray-800 font-medium">{profile?.department}</p>
             </div>
 
             <div>
               <h3 className="text-gray-500 text-xs font-semibold uppercase">Current Company</h3>
-              <p className="text-gray-800 font-medium">{profile.company}</p>
+              <p className="text-gray-800 font-medium">{profile?.currentCompany}</p>
             </div>
 
             <div>
               <h3 className="text-gray-500 text-xs font-semibold uppercase">Position</h3>
-              <p className="text-gray-800 font-medium">{profile.position}</p>
+              <p className="text-gray-800 font-medium">{profile?.currentPosition}</p>
             </div>
 
             <div className="md:col-span-2">
               <h3 className="text-gray-500 text-xs font-semibold uppercase">Bio</h3>
-              <p className="text-gray-800 font-medium">{profile.bio}</p>
+              <p className="text-gray-800 font-medium">{profile?.bio}</p>
             </div>
           </div>
         </div>
@@ -151,7 +175,8 @@ const AlumniProfile = () => {
         <Card>
           <h3 className="text-lg font-semibold mb-3 border-b pb-2">Skills</h3>
           <div className="flex flex-wrap gap-2">
-            {profile.skills.map((s, i) => (
+            
+            {profile?.skills?.map((s, i) => (
               <span
                 key={i}
                 className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
@@ -159,6 +184,8 @@ const AlumniProfile = () => {
                 {s}
               </span>
             ))}
+
+            
           </div>
         </Card>
 
@@ -166,7 +193,7 @@ const AlumniProfile = () => {
         <Card>
           <h3 className="text-lg font-semibold mb-3 border-b pb-2">Achievements</h3>
           <ul className="list-disc pl-5 space-y-1 text-gray-700">
-            {profile.achievements.map((a, i) => (
+            {profile?.achievements?.map((a, i) => (
               <li key={i}>{a}</li>
             ))}
           </ul>
@@ -176,7 +203,7 @@ const AlumniProfile = () => {
         <Card>
           <h3 className="text-lg font-semibold mb-3 border-b pb-2">Alumni Contributions</h3>
           <ul className="list-disc pl-5 space-y-1 text-gray-700">
-            {profile.contributions.map((c, i) => (
+            {profile?.contributions?.map((c, i) => (
               <li key={i}>{c}</li>
             ))}
           </ul>

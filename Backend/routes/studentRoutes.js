@@ -1,10 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middlewares/multer");
 const {
-  getAllStudents,
-  getStudentById,
-  createStudent,
-  updateStudent,
   handleStudentProfileDelete,
   handleUpdateStudentProfile,
   handleGetMyProfile,
@@ -14,15 +11,7 @@ const {
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 const { verifyToken } = require("../middlewares/authMiddleware");
 
-router.use(verifyToken, authorizeRoles("student"));
-
-// router.route("/").get(getAllStudents).post(createStudent);
-
-// router
-//   .route("/:id")
-//   .get(getStudentById)
-//   .put(updateStudent)
-//   .delete(deleteStudent);
+router.use(verifyToken, authorizeRoles("Student"));
 
 // GET: Student dashboard data
 router.get("/dashboard", handleGetDashboardData);
@@ -34,13 +23,13 @@ router.get("/profile/me", handleGetMyProfile);
  router.put("/profile/update", handleUpdateStudentProfile);
 
 // DELETE: Delete student profile
-router.delete('/profile/delete', handleStudentProfileDelete)
+router.delete("/profile/delete", handleStudentProfileDelete);
 
 // GET: All events (open to students)
 // router.get("/events", handleGetAllEvents);
 
 //GET: Specific user by id
-router.get('/user/:id', handleGetUserById);
+router.get("/user/:id", handleGetUserById);
 
 // // POST: Register for an event
 // router.post("/events/:eventId/register", handleRegisterForEvent);

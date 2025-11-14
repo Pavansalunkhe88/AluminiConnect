@@ -2,6 +2,8 @@ const User = require("../model/registerUser/UserScehma");
 const bcrypt = require("bcrypt");
 const Student = require("../model/Student");
 const { handleAddRemoveArray } = require("../utils/profileDataArray");
+const cloudinary = require("../utils/cloudinaryConfig");
+const fs = require("fs");
 
 async function handleUpdateStudentProfile(req, res) {
   try {
@@ -42,50 +44,92 @@ async function handleUpdateStudentProfile(req, res) {
   }
 }
 
+
 async function handleInsertDataToStudentModel(req, res) {
   try {
     const userId = req.user.id;
     const role = req.user.role;
 
-    // Only students can update this profile
+    console.log("BODY →", req.body);
+    console.log("FILES →", req.files);
+
+    // Only Student can modify student profile
     if (role !== "Student") {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    // Check if student profile already exists
+    // Check if profile exists
     let student = await Student.findOne({ user: userId });
 
-    // If profile does not exist → create
+    // Create if not exists
     if (!student) {
       student = new Student({ user: userId });
     }
 
-    // Ownership validation (extra safety)
+    // Ownership check
     if (student.user.toString() !== userId) {
-      return res.status(403).json({ message: "Not allowed to modify profile" });
+      return res.status(403).json({
+        message: "You are not allowed to modify this profile",
+      });
     }
 
-    // Allowed fields for update
-    const allowedFields = [
-      "profileImage",
-      "coverImage",
+    const uploadToCloudinary = async (file, folder) => {
+      const upload = await cloudinary.uploader.upload(file.path, {
+        folder,
+        transformation: [
+          { width: 800, height: 800, crop: "limit" },
+          { quality: "auto" },
+        ],
+      });
+
+      fs.unlinkSync(file.path);
+
+      return {
+        url: upload.secure_url,
+        public_id: upload.public_id,
+      };
+    };
+
+    // profileImage
+    if (req.files?.profileImage?.length > 0) {
+      const file = req.files.profileImage[0];
+
+      if (student.profileImage?.public_id) {
+        await cloudinary.uploader.destroy(student.profileImage.public_id);
+      }
+
+      student.profileImage = await uploadToCloudinary(file, "student_profiles");
+    }
+
+    // coverImage
+    if (req.files?.coverImage?.length > 0) {
+      const file = req.files.coverImage[0];
+
+      if (student.coverImage?.public_id) {
+        await cloudinary.uploader.destroy(student.coverImage.public_id);
+      }
+
+      student.coverImage = await uploadToCloudinary(file, "student_covers");
+    }
+
+    const allowed = [
       "department",
+      "bio",
+      "achievements",
       "batch",
       "course",
       "address",
       "contact",
-      "location",
-      "bio",
+      "currentYear",
+      "skills",
     ];
 
-    // Update simple fields only if provided
-    allowedFields.forEach((field) => {
+    allowed.forEach((field) => {
       if (req.body[field] !== undefined && req.body[field] !== "") {
         student[field] = req.body[field];
       }
     });
 
-    // Array fields (skills + achievements)
     if (req.body.skills) {
       student.skills = handleAddRemoveArray(
         student.skills || [],
@@ -107,10 +151,60 @@ async function handleInsertDataToStudentModel(req, res) {
       profile: student,
     });
   } catch (err) {
-    console.error("Error updating student profile:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("Student Update Error:", err);
+
+    // cleanup temp file if failed
+    try {
+      if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+    } catch (unlinkErr) {
+      console.warn("Cleanup failed:", unlinkErr.message);
+    }
+
+    return res.status(500).json({ message: "Something went wrong." });
   }
 }
+
+async function handleGetStudentProfile(req, res) {
+  try {
+    const userId = req.user.id;
+    const role = req.user.role.toLowerCase();
+
+    console.log("INSIDE GET STUDENT PROFILE:", userId, role);
+
+    // Role check
+    if (role !== "student") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    // Fetch with user details populated
+    let student = await Student.findOne({ user: userId }).populate(
+      "user",
+      "name email"
+    );
+
+    if (!student) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Convert to plain JS object
+    student = student.toObject();
+
+    // Return structured response
+    res.status(200).json({
+      ...student,
+      name: student.user?.name || "",
+      email: student.user?.email || "",
+      profileImage: student.profileImage || { url: "", public_id: "" },
+      coverImage: student.coverImage || { url: "", public_id: "" },
+    });
+  } catch (error) {
+    console.error("Get Student Profile Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
 
 async function handleGetMyProfile(req, res) {
   try {
@@ -164,28 +258,6 @@ async function handleGetUserById(req, res) {
   }
 }
 
-// async function handleGetProfile(req, res) {
-//   try {
-//     const { id } = req.params;
-//     const viewerId = req.user.id;
-
-//     const targetId = id || viewerId; // if /me or /:id
-
-//     const projection =
-//       viewerId === targetId
-//         ? "-password -__v" // full profile if owner
-//         : "name email role about avatarUrl";
-
-//     const user = await User.findById(targetId).select(projection).lean();
-
-//     if (!user) return res.status(404).json({ message: "User not found" });
-
-//     res.status(200).json({ user });
-//   } catch (err) {
-//     console.error("Error fetching profile:", err);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// }
 
 async function handleStudentProfileDelete(req, res) {
   try {

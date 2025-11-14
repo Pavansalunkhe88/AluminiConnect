@@ -13,15 +13,36 @@ const departments = [
   "Instrumentation Engineering",
 ];
 
+const skillOptions = [
+  "JavaScript",
+  "React",
+  "Node.js",
+  "Python",
+  "Machine Learning",
+  "Data Science",
+  "Cloud Computing",
+  "DevOps",
+  "Cyber Security",
+  "Full Stack Development",
+  "Java",
+  "C++",
+];
+
 const StudentProfileForm = () => {
   const [form, setForm] = useState({
     department: "",
     address: "",
+    currentYear: "",
+    projects: "",
+    bio: "",
+    skills: "",
+    achievements: "",
     batch: "",
     course: "",
     contact: "",
   });
 
+  //const [achievementInput, setAchievementInput] = useState("");
   const [profileImage, setProfileImage] = useState(null);
   const [coverImage, setCoverImage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,41 +51,86 @@ const StudentProfileForm = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Convert file to Base64
+  const toggleSkill = (skill) => {
+    setForm((prev) => {
+      const exists = prev.skills.includes(skill);
+      if (exists) {
+        return {
+          ...prev,
+          skills: prev.skills.filter((s) => s !== skill),
+        };
+      }
+      return {
+        ...prev,
+        skills: [...prev.skills, skill],
+      };
+    });
+  };
+
+
+  // Add Achievement
+  // const addAchievement = () => {
+  //   if (!achievementInput.trim()) return;
+  //   setForm({
+  //     ...form,
+  //     achievements: [...form.achievements, achievementInput],
+  //   });
+  //   setAchievementInput("");
+  // };
+
+
   const handleFileUpload = (e, setImage) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => setImage(reader.result);
+    if (file) setImage(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const payload = {
-      ...form,
-      profileImage,
-      coverImage,
-    };
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+
+    // Append simple text fields
+    Object.entries(form).forEach(([key, value]) => {
+      if (key !== "profileImage" && key !== "coverImage") {
+        formData.append(key, value);
+      }
+    });
+
+    // Append files
+    if (profileImage) formData.append("profileImage", profileImage);
+    if (coverImage) formData.append("coverImage", coverImage);
+
+    // Debug log
+    for (const pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
 
     try {
-      const res = await fetch("/api/student/profile", {
+      const res = await fetch("http://localhost:4000/api/student/profile", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
       });
 
       const data = await res.json();
-      alert("Profile submitted successfully!");
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong!");
-    } finally {
-      setLoading(false);
+      console.log("SERVER:", data);
+
+      if (!res.ok) {
+        alert(data.message || "Failed to save profile");
+        return;
+      }
+
+      alert("Saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Server error");
     }
+
+    setLoading(false);
   };
 
   return (
@@ -74,10 +140,35 @@ const StudentProfileForm = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <h1 className="text-2xl font-bold mb-5 text-center">Complete Your Profile</h1>
+      <h1 className="text-2xl font-bold mb-5 text-center">
+        Complete Your Profile
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        
+        {/* Bio */}
+        <div>
+          <label className="font-medium">Bio</label>
+          <textarea
+            name="bio"
+            value={form.bio}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg"
+            placeholder="Write anything special which defines you."
+          />
+        </div>
+
+        {/* Current Year */}
+        <div>
+          <label className="font-medium">Current Year</label>
+          <input
+            name="currentYear"
+            value={form.currentYear}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg"
+            placeholder="Which year currently you are in ?"
+          />
+        </div>
+
         {/* Department */}
         <div>
           <label className="block font-medium mb-1">Department</label>
@@ -90,7 +181,9 @@ const StudentProfileForm = () => {
           >
             <option value="">Select Department</option>
             {departments.map((dept, i) => (
-              <option key={i} value={dept}>{dept}</option>
+              <option key={i} value={dept}>
+                {dept}
+              </option>
             ))}
           </select>
         </div>
@@ -122,6 +215,16 @@ const StudentProfileForm = () => {
           />
         </div>
 
+        {/* Projects */}
+        {/* <div>
+          <h3 className="text-lg font-semibold mb-3 border-b pb-2">Achievements</h3>
+          <ul className="list-disc pl-5 space-y-1 text-gray-700">
+            {profile?.achievements?.map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ul>
+        </div> */}
+
         {/* Course */}
         <div>
           <label className="block font-medium mb-1">Course</label>
@@ -134,6 +237,7 @@ const StudentProfileForm = () => {
             placeholder="e.g., Diploma, B.Tech"
           />
         </div>
+        
 
         {/* Contact */}
         <div>
@@ -147,6 +251,50 @@ const StudentProfileForm = () => {
             placeholder="Enter phone number"
           />
         </div>
+
+        {/* Skills */}
+
+        <div>
+          <label className="font-medium">Skills</label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {skillOptions.map((skill) => (
+              <label key={skill} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={form.skills.includes(skill)}
+                  onChange={() => toggleSkill(skill)}
+                />
+                <span>{skill}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Achievements */}
+        {/* <div>
+          <label className="font-medium">Achievements</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={achievementInput}
+              onChange={(e) => setAchievementInput(e.target.value)}
+              placeholder="Add an achievement"
+              className="flex-1 p-2 border rounded-lg"
+            />
+            <button
+              type="button"
+              onClick={addAchievement}
+              className="px-4 bg-gray-700 text-white rounded-lg"
+            >
+              Add
+            </button>
+          </div>
+          <ul className="mt-2 list-disc pl-6">
+            {form.achievements.map((ach, index) => (
+              <li key={index}>{ach}</li>
+            ))}
+          </ul>
+        </div> */}
 
         {/* Profile Image */}
         <div>

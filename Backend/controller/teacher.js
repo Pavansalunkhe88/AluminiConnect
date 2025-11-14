@@ -2,49 +2,21 @@ const User = require("../model/registerUser/UserScehma");
 const bcrypt = require("bcrypt");
 const Teacher = require("../model/Teacher");
 const { handleAddRemoveArray } = require("../utils/profileDataArray");
+const cloudinary = require("../utils/cloudinaryConfig");
+const fs = require("fs");
 
 async function handleDeleteTeacher(req, res) {
   const { id } = req.params;
   res.send(`Delete Teacher with ID: ${id}`);
 }
 
-async function handleGetMyProfile(req, res) {
-  try {
-    const id = req.user.id;
-
-    const teacher = await User.findById(id).select("-password -__v");
-    if (!teacher)
-      return res.status(404).json({ message: "Teacher not found." });
-
-    res
-      .status(200)
-      .json({ message: "Teacher retrieved successfully", teacher });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Something went wrong", error: err.message });
-  }
-}
-
-// async function handleGetTeacherProfileToUpdate(req, res) {
-//   try {
-//     const id = req.user?.id;
-//     const teacher = await User.findById(id).select("-password -__v");
-//     if (!teacher) return res.status(404).json({ message: "Teacher not found" });
-
-//     res.status(200).json({
-//       message: "Teacher data fetched successfully for update",
-//       teacher,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: "Internal Server Error" });
-//   }
-// }
 
 async function handleInsertDataToTacherModel(req, res) {
   try {
     const userId = req.user.id;
     const role = req.user.role;
+    console.log("BODY →", req.body);
+    console.log("FILES →", req.files);
 
     if (role !== "Teacher") {
       return res.status(403).json({ message: "Access denied" });
@@ -56,17 +28,60 @@ async function handleInsertDataToTacherModel(req, res) {
       teacher = new Teacher({ user: userId });
     }
 
+    // OWNERSHIP CHECK
     if (teacher.user.toString() !== userId) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
+    // upload function
+    const uploadToCloudinary = async (file, folder) => {
+      const upload = await cloudinary.uploader.upload(file.path, {
+        folder,
+        transformation: [
+          { width: 800, height: 800, crop: "limit" },
+          { quality: "auto" },
+        ],
+      });
+
+      // delete temp file
+      fs.unlinkSync(file.path);
+
+      return {
+        url: upload.secure_url,
+        public_id: upload.public_id,
+      };
+    };
+
+    // Handle profileImage upload
+    if (req.files?.profileImage?.length > 0) {
+      const file = req.files.profileImage[0];
+
+      // delete old image if exists
+      if (teacher.profileImage?.public_id) {
+        await cloudinary.uploader.destroy(teacher.profileImage.public_id);
+      }
+
+      teacher.profileImage = await uploadToCloudinary(file, "teacher_profiles");
+    }
+
+    // Handle coverImage upload
+    if (req.files?.coverImage?.length > 0) {
+      const file = req.files.coverImage[0];
+
+      // delete old image if exists
+      if (teacher.coverImage?.public_id) {
+        await cloudinary.uploader.destroy(teacher.coverImage.public_id);
+      }
+
+      teacher.coverImage = await uploadToCloudinary(file, "teacher_covers");
+    }
+
     const allowed = [
-      "profileImage",
-      "coverImage",
       "designation",
       "contact",
       "department",
       "experienceYears",
+      "achievements",
       "qualifications",
       "bio",
       "location",
@@ -78,7 +93,7 @@ async function handleInsertDataToTacherModel(req, res) {
       }
     });
 
-    // Specializations is an array
+    // specialization array
     if (req.body.specialization) {
       teacher.specialization = handleAddRemoveArray(
         teacher.specialization || [],
@@ -88,10 +103,54 @@ async function handleInsertDataToTacherModel(req, res) {
 
     await teacher.save();
 
-    res.status(200).json({ message: "Profile updated", profile: teacher });
+    res.status(200).json({
+      message: "Teacher profile updated successfully",
+      profile: teacher,
+    });
   } catch (err) {
-    console.error("Teacher Update Error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.log("Error while Inserting the data :", err.message);
+    try {
+      if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+    } catch (unlinkErr) {
+      console.warn("Cleanup failed:", unlinkErr.message);
+    }
+
+    return res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
+async function handleGetTeacherProfile(req, res) {
+  try {
+    const userId = req.user.id;
+    const role = req.user.role.toLowerCase();
+    //console.log(userId);
+    // const user = await User.findById({userId, user: userId})
+    // .populate("user", "name email")
+
+    if (role !== "teacher") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const teacher = await Teacher.findOne({ user: userId }).populate(
+      "user",
+      "name email"
+    );
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    //res.status(200).json(teacher);
+    res.status(200).json({
+      ...teacher.toObject(),
+      name: teacher.user?.name,
+      email: teacher.user?.email,
+    });
+  } catch (error) {
+    console.error("Teacher Get Profile Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 }
 

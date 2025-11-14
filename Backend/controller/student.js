@@ -340,5 +340,6 @@ module.exports = {
   handleGetMyProfile,
   handleStudentProfileDelete,
   handleGetUserById,
-  handleGetDashboardData
+  handleInsertDataToStudentModel,
+  handleGetStudentProfile
 };

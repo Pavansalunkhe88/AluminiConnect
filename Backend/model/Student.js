@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const DEPARTMENTS = require("../constants/departments")
+const DEPARTMENTS = require("../constants/departments");
 
 // const studentSchema = new mongoose.Schema(
 //   {
@@ -48,8 +48,16 @@ const studentSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    profileImage: { type: String, default: "" },
-    coverImage: { type: String, default: "" },
+
+    profileImage: {
+      url: String,
+      public_id: String,
+    },
+
+    coverImage: {
+      url: String,
+      public_id: String,
+    },
 
     department: {
       type: String,
@@ -57,13 +65,15 @@ const studentSchema = new mongoose.Schema(
       required: true,
     },
 
-    batch: { type: Number, required: true },  
+    batch: { type: Number, required: true },
     course: { type: String, default: "" },
     address: { type: String, default: "" },
     contact: { type: String, default: "" },
+    currentYear: { type: String, default: "" },
 
-    bio: { type: String, default: "" },  
+    bio: { type: String, default: "" },
     skills: { type: [String], default: [] },
+    projects: { type: [String], default: [] },
     achievements: { type: [String], default: [] },
 
     verified: { type: Boolean, default: false },
@@ -71,7 +81,6 @@ const studentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 
 const Student = mongoose.model("Student", studentSchema);
 

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const DEPARTMENTS = require("../constants/departments")
+const DEPARTMENTS = require("../constants/departments");
 
 const alumniSchema = new mongoose.Schema(
   {
@@ -8,10 +8,18 @@ const alumniSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    profileImage: { type: String, default: "" },
-    coverImage: { type: String, default: "" },
 
-    graduationYear: { type: Number, required: true },  
+    profileImage: {
+      url: String,
+      public_id: String,
+    },
+    
+    coverImage: {
+      url: String,
+      public_id: String,
+    },
+
+    graduationYear: { type: Number, required: true },
 
     department: {
       type: String,
@@ -36,7 +44,6 @@ const alumniSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 
 const Alumni = mongoose.model("Alumni", alumniSchema);
 

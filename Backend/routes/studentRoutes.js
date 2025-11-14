@@ -1,46 +1,44 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middlewares/multer");
 const {
-  getAllStudents,
-  getStudentById,
-  createStudent,
-  updateStudent,
   handleStudentProfileDelete,
   handleUpdateStudentProfile,
   handleGetMyProfile,
-  handleGetUserById
+  handleGetUserById,
+  handleInsertDataToStudentModel,
+  handleGetStudentProfile
 } = require("../controller/student");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 const { verifyToken } = require("../middlewares/authMiddleware");
 
-router.use(verifyToken, authorizeRoles("student"));
-
-// router.route("/").get(getAllStudents).post(createStudent);
-
-// router
-//   .route("/:id")
-//   .get(getStudentById)
-//   .put(updateStudent)
-//   .delete(deleteStudent);
+router.use(verifyToken, authorizeRoles("Student"));
 
 // router.get("/dashboard", (req, res) => {
 //   res.send("welcome to Student Dashboard");
 // });
 
 // GET: Student profile
-router.get("/profile/me", handleGetMyProfile);
- 
-// PUT: Update student profile
- router.put("/profile/update", handleUpdateStudentProfile);
+router.get("/profile", handleGetStudentProfile);
+
+router.post(
+  "/profile",
+  upload.fields([
+    { name: "profileImage", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 },
+  ]),
+  handleInsertDataToStudentModel
+);
+router.put("/profile/update", handleUpdateStudentProfile);
 
 // DELETE: Delete student profile
-router.delete('/profile/delete', handleStudentProfileDelete)
+router.delete("/profile/delete", handleStudentProfileDelete);
 
 // GET: All events (open to students)
 // router.get("/events", handleGetAllEvents);
 
 //GET: Specific user by id
-router.get('/user/:id', handleGetUserById);
+router.get("/user/:id", handleGetUserById);
 
 // // POST: Register for an event
 // router.post("/events/:eventId/register", handleRegisterForEvent);

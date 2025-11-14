@@ -36,8 +36,10 @@ const AlumniProfileForm = () => {
     currentPosition: "",
     linkedin: "",
     contact: "",
+    bio: "",
     skills: [],
     achievements: [],
+    contributions: [],
     location: "",
   });
 
@@ -76,41 +78,60 @@ const AlumniProfileForm = () => {
     setAchievementInput("");
   };
 
-  // Convert image file → Base64
+
   const handleFileUpload = (e, setImage) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => setImage(reader.result);
+    if (file) setImage(file);
   };
 
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const payload = {
-      ...form,
-      profileImage,
-      coverImage,
-    };
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+
+    // Append simple text fields
+    Object.entries(form).forEach(([key, value]) => {
+      if (key !== "profileImage" && key !== "coverImage") {
+        formData.append(key, value);
+      }
+    });
+
+    // Append files
+    if (profileImage) formData.append("profileImage", profileImage);
+    if (coverImage) formData.append("coverImage", coverImage);
+
+    // Debug log
+    for (const pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
 
     try {
-      const res = await fetch("/api/alumni/profile", {
+      const res = await fetch("http://localhost:4000/api/alumni/profile", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
       });
 
       const data = await res.json();
-      alert("Alumni Profile Saved Successfully!");
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong!");
-    } finally {
-      setLoading(false);
+      console.log("SERVER:", data);
+
+      if (!res.ok) {
+        alert(data.message || "Failed to save profile");
+        return;
+      }
+
+      alert("Saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Server error");
     }
+
+    setLoading(false);
   };
 
   return (
@@ -123,6 +144,17 @@ const AlumniProfileForm = () => {
       <h2 className="text-2xl font-bold text-center mb-6">Alumni Profile</h2>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Bio */}
+        <div>
+          <label className="font-medium">Bio</label>
+          <textarea
+            name="bio"
+            value={form.bio}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-lg"
+            placeholder="Write anything special which defines you."
+          />
+        </div>
 
         {/* Graduation Year */}
         <div>
@@ -264,12 +296,20 @@ const AlumniProfileForm = () => {
         {/* Images */}
         <div>
           <label className="font-medium">Profile Image</label>
-          <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, setProfileImage)} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleFileUpload(e, setProfileImage)}
+          />
         </div>
 
         <div>
           <label className="font-medium">Cover Image</label>
-          <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, setCoverImage)} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleFileUpload(e, setCoverImage)}
+          />
         </div>
 
         {/* Submit */}

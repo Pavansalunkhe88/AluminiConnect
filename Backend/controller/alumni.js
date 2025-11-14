@@ -2,6 +2,8 @@ const User = require("../model/registerUser/UserScehma");
 const bcrypt = require("bcrypt");
 const Alumni = require("../model/Alumni");
 const { handleAddRemoveArray } = require("../utils/profileDataArray");
+const cloudinary = require("../utils/cloudinaryConfig");
+const fs = require("fs");
 
 async function getAllAlumni(req, res) {
   res.send("Get all Alumni");
@@ -61,37 +63,80 @@ async function handleUpdateAlumniProfile(req, res) {
   }
 }
 
+
 async function handleInsertDataToAlumniModel(req, res) {
   try {
-    const userId = req.user.id; // from JWT
+    const userId = req.user.id;
     const role = req.user.role;
 
-    // Only alumni role can modify this profile
+    console.log("BODY →", req.body);
+    console.log("FILES →", req.files);
+
+    // Only alumni can update/create alumni profile
     if (role !== "Alumni") {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    // Check if alumni profile already exists
+    // Check if profile exists
     let alumni = await Alumni.findOne({ user: userId });
 
-    // If profile does not exist -> create
+    // Create new profile if none exists
     if (!alumni) {
       alumni = new Alumni({ user: userId });
     }
 
-    // Ownership check (extra safety)
+    // Ownership check
     if (alumni.user.toString() !== userId) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to modify this profile" });
+      return res.status(403).json({
+        message: "You are not allowed to modify this profile",
+      });
     }
 
-    // Fields allowed to update
-    const allowedFields = [
-      "profileImage",
-      "coverImage",
+    const uploadToCloudinary = async (file, folder) => {
+      const upload = await cloudinary.uploader.upload(file.path, {
+        folder,
+        transformation: [
+          { width: 800, height: 800, crop: "limit" },
+          { quality: "auto" },
+        ],
+      });
+
+      fs.unlinkSync(file.path);
+
+      return {
+        url: upload.secure_url,
+        public_id: upload.public_id,
+      };
+    };
+
+    // profileImage
+    if (req.files?.profileImage?.length > 0) {
+      const file = req.files.profileImage[0];
+
+      if (alumni.profileImage?.public_id) {
+        await cloudinary.uploader.destroy(alumni.profileImage.public_id);
+      }
+
+      alumni.profileImage = await uploadToCloudinary(file, "alumni_profiles");
+    }
+
+    // coverImage
+    if (req.files?.coverImage?.length > 0) {
+      const file = req.files.coverImage[0];
+
+      if (alumni.coverImage?.public_id) {
+        await cloudinary.uploader.destroy(alumni.coverImage.public_id);
+      }
+
+      alumni.coverImage = await uploadToCloudinary(file, "alumni_covers");
+    }
+
+    const allowed = [
       "graduationYear",
       "department",
+      "skills",
+      "achievements",
+      "contributions",
       "currentCompany",
       "currentPosition",
       "linkedin",
@@ -100,23 +145,26 @@ async function handleInsertDataToAlumniModel(req, res) {
       "bio",
     ];
 
-    // Update simple fields
-    allowedFields.forEach((field) => {
+    allowed.forEach((field) => {
       if (req.body[field] !== undefined && req.body[field] !== "") {
         alumni[field] = req.body[field];
       }
     });
 
-    // Handle arrays with "add-remove" logic
     if (req.body.skills) {
-      alumni.skills = handleAddRemoveArray(alumni.skills || [], req.body.skills);
+      alumni.skills = handleAddRemoveArray(
+        alumni.skills || [],
+        req.body.skills
+      );
     }
+
     if (req.body.achievements) {
       alumni.achievements = handleAddRemoveArray(
         alumni.achievements || [],
         req.body.achievements
       );
     }
+
     if (req.body.contributions) {
       alumni.contributions = handleAddRemoveArray(
         alumni.contributions || [],
@@ -124,16 +172,57 @@ async function handleInsertDataToAlumniModel(req, res) {
       );
     }
 
-    // Save new/updated profile
     await alumni.save();
 
     res.status(200).json({
-      message: "Profile updated successfully",
+      message: "Alumni profile updated successfully",
       profile: alumni,
     });
   } catch (err) {
-    console.error("Error updating alumni profile:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("Alumni Update Error:", err);
+    try {
+      if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+    } catch (unlinkErr) {
+      console.warn("Cleanup failed:", unlinkErr.message);
+    }
+
+    return res.status(500).json({ message: "Something went wrong." });
+  }
+}
+
+
+async function handleGetAlumniProfile(req, res) {
+  try {
+    const userId = req.user.id;
+    const role = req.user.role.toLowerCase();
+
+    console.log("INSIDE GET ALUMNI PROFILE", userId, role);
+
+    if (role !== "alumni") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    let alumni = await Alumni.findOne({ user: userId }).populate(
+      "user",
+      "name email"
+    );
+
+    if (!alumni) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    alumni = alumni.toObject();
+
+    res.status(200).json({
+      ...alumni,
+      name: alumni.user?.name || "",
+      email: alumni.user?.email || "",
+    });
+  } catch (error) {
+    console.error("Get Alumni Profile Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 }
 
@@ -190,10 +279,7 @@ async function handleGetProfile(req, res) {
   }
 }
 
-// async function deleteAlumni(req, res) {
-//   const { id } = req.params;
-//   res.send(`Delete Alumni with ID: ${id}`);
-// }
+
 
 module.exports = {
   getAllAlumni,
@@ -205,4 +291,5 @@ module.exports = {
   handleGetProfile,
   handleGetUserById,
   handleInsertDataToAlumniModel,
+  handleGetAlumniProfile,
 };

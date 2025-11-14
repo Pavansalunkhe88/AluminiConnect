@@ -1,24 +1,34 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middlewares/multer");
 const {
   handleUpdateAlumniProfile,
   handleDeleteAlumni,
   handleGetProfile,
   handleGetUserById,
-  handleInsertDataToAlumniModel
+  handleInsertDataToAlumniModel,
+  handleGetAlumniProfile
 } = require("../controller/alumni");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 
-router.use(verifyToken, authorizeRoles("alumni"));
+router.use(verifyToken, authorizeRoles("Alumni"));
 
 // Everyone (students, teachers, alumni, admins) can view alumni
 //router.get("/", handleGetAllAlumni);
-router.get("/:id", handleGetUserById);
+//router.get("/:id", handleGetUserById);
 
 //  Profile
-router.get("/profile", handleGetProfile);
-router.put("/profile", handleInsertDataToAlumniModel);
+router.get("/profile", handleGetAlumniProfile);
+router.post(
+  "/profile",
+  upload.fields([
+    { name: "profileImage", maxCount: 1 },
+    { name: "coverImage", maxCount: 1 },
+  ]),
+  handleInsertDataToAlumniModel
+);
+//router.put("/profile", handleInsertDataToAlumniModel);
 router.delete("/profile", handleDeleteAlumni);
 
 // Jobs
@@ -30,7 +40,6 @@ router.delete("/profile", handleDeleteAlumni);
 // GET /api/users/:id/education → education details
 // GET /api/users/:id/posts → user activity
 // GET /api/users/:id/connections → mutual connections, etc.
-
 
 // // Mentorship
 // router.post("/mentorship/create", createMentorship);

@@ -6,17 +6,21 @@ const {
   handleDeleteAlumni,
   handleGetProfile,
   handleGetUserById,
-  handleInsertDataToAlumniModel,
-  handleGetAlumniProfile
+  handleGetDashboardData
 } = require("../controller/alumni");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 
 router.use(verifyToken, authorizeRoles("Alumni"));
 
-// Everyone (students, teachers, alumni, admins) can view alumni
-//router.get("/", handleGetAllAlumni);
-//router.get("/:id", handleGetUserById);
+// router.get("/", getAllAlumni);
+// router.get("/:id", getAlumniById);
+// router.post("/", createAlumni);
+// router.put("/:id", updateAlumni);
+// router.delete("/:id", deleteAlumni);
+
+// GET: Alumni dashboard data
+router.get("/dashboard", handleGetDashboardData);
 
 //  Profile
 router.get("/profile", handleGetAlumniProfile);

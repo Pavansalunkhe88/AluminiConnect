@@ -297,11 +297,48 @@ async function handleStudentProfileDelete(req, res) {
   }
 }
 
+
+async function handleGetDashboardData(req, res) {
+  try {
+    const userId = req.user.id;
+
+    // Mock dynamic data - in real app, this would come from database
+    const dashboardData = {
+      stats: [
+        { label: "Events Attended", value: Math.floor(Math.random() * 20) + 1 },
+        { label: "Alumni Connections", value: Math.floor(Math.random() * 50) + 1 },
+        { label: "Projects Completed", value: Math.floor(Math.random() * 10) + 1 }
+      ],
+      activities: [
+        {
+          type: "connection",
+          title: "New Connection",
+          description: "Connected with alumni from Tech Corp",
+          timestamp: "2 hours ago"
+        },
+        {
+          type: "event",
+          title: "Event Registration",
+          description: "Registered for Career Workshop",
+          timestamp: "1 day ago"
+        }
+      ]
+    };
+
+    res.status(200).json({
+      message: "Dashboard data retrieved successfully",
+      data: dashboardData
+    });
+  } catch (err) {
+    console.error("Error fetching dashboard data:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 module.exports = {
   handleUpdateStudentProfile,
   handleGetMyProfile,
   handleStudentProfileDelete,
   handleGetUserById,
-  handleInsertDataToStudentModel,
-  handleGetStudentProfile
+  handleGetDashboardData
 };

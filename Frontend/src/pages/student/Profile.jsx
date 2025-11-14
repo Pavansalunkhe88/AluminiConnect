@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import StudentProfileForm from "./ProfileSetup";
+import { useNavigate } from "react-router-dom";
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -118,7 +119,7 @@ const ProfilePage = () => {
           </div>
 
           <button
-            onClick={() => setEditing(true)}
+            onClick={() => navigate('/student/profile-setup')}
             className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium"
           >
             Edit Profile

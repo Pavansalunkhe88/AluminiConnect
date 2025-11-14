@@ -247,12 +247,50 @@ async function handleTeacherProfileDelete(req, res) {
   }
 }
 
+
+async function handleGetDashboardData(req, res) {
+  try {
+    const userId = req.user.id;
+
+    // Mock dynamic data - in real app, this would come from database
+    const dashboardData = {
+      stats: [
+        { label: "Students Taught", value: Math.floor(Math.random() * 100) + 50 },
+        { label: "Events Organized", value: Math.floor(Math.random() * 15) + 5 },
+        { label: "Resources Created", value: Math.floor(Math.random() * 25) + 10 },
+        { label: "Alumni Network", value: Math.floor(Math.random() * 200) + 100 }
+      ],
+      activities: [
+        {
+          type: "event",
+          title: "Career Fair",
+          description: "Organized annual career fair",
+          timestamp: "1 week ago"
+        },
+        {
+          type: "mentorship",
+          title: "Mentorship Program",
+          description: "Launched new mentorship initiative",
+          timestamp: "2 weeks ago"
+        }
+      ]
+    };
+
+    res.status(200).json({
+      message: "Dashboard data retrieved successfully",
+      data: dashboardData
+    });
+  } catch (err) {
+    console.error("Error fetching dashboard data:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 module.exports = {
   handleDeleteTeacher,
   //handleGetTeacherProfile,
   //handleGetTeacherProfileToUpdate,
   handleUpdateTeacherProfile,
   handleTeacherProfileDelete,
-  handleInsertDataToTacherModel,
-  handleGetTeacherProfile,
+  handleGetDashboardData
 };

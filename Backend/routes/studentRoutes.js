@@ -6,30 +6,21 @@ const {
   handleUpdateStudentProfile,
   handleGetMyProfile,
   handleGetUserById,
-  handleInsertDataToStudentModel,
-  handleGetStudentProfile
+  handleGetDashboardData
 } = require("../controller/student");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 const { verifyToken } = require("../middlewares/authMiddleware");
 
 router.use(verifyToken, authorizeRoles("Student"));
 
-// router.get("/dashboard", (req, res) => {
-//   res.send("welcome to Student Dashboard");
-// });
+// GET: Student dashboard data
+router.get("/dashboard", handleGetDashboardData);
 
 // GET: Student profile
-router.get("/profile", handleGetStudentProfile);
+router.get("/profile/me", handleGetMyProfile);
 
-router.post(
-  "/profile",
-  upload.fields([
-    { name: "profileImage", maxCount: 1 },
-    { name: "coverImage", maxCount: 1 },
-  ]),
-  handleInsertDataToStudentModel
-);
-router.put("/profile/update", handleUpdateStudentProfile);
+// PUT: Update student profile
+ router.put("/profile/update", handleUpdateStudentProfile);
 
 // DELETE: Delete student profile
 router.delete("/profile/delete", handleStudentProfileDelete);

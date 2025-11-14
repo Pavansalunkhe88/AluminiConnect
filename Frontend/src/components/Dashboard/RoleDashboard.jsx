@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -9,7 +9,6 @@ const dashboardConfigs = {
     stats: [
       { label: "Events Attended", value: "12" },
       { label: "Alumni Connections", value: "45" },
-      { label: "Learning Hours", value: "120" },
       { label: "Projects Completed", value: "8" }
     ],
     actions: [
@@ -102,9 +101,7 @@ const dashboardConfigs = {
     subtitle: (department) => `Department: ${department}`,
     stats: [
       { label: "Active Students", value: "150" },
-      { label: "Course Materials", value: "25" },
       { label: "Avg. Performance", value: "85%" },
-      { label: "Office Hours", value: "10" }
     ],
     actions: [
       {
@@ -113,13 +110,6 @@ const dashboardConfigs = {
         buttonText: "Manage Students",
         onClick: () => {},
         icon: '👨‍🎓'
-      },
-      {
-        title: "Course Management",
-        description: "Update course materials and assignments",
-        buttonText: "Manage Courses",
-        onClick: () => {},
-        icon: '📚'
       },
       {
         title: "Reports",
@@ -136,12 +126,6 @@ const dashboardConfigs = {
         description: "Updated Database Management syllabus",
         timestamp: "1 hour ago"
       },
-      {
-        type: "meeting",
-        title: "Office Hours",
-        description: "Meeting with CS401 students",
-        timestamp: "1 day ago"
-      }
     ]
   }
 };
@@ -162,6 +146,36 @@ const RoleDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('feed');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const axios = (await import("axios")).default;
+        const response = await axios.get(`/api/${user?.role?.toLowerCase()}/dashboard`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          withCredentials: true
+        });
+
+        if (response.data && response.data.data) {
+          setDashboardData(response.data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.role) {
+      fetchDashboardData();
+    }
+  }, [user?.role]);
 
   // Get the configuration based on user role
   const currentConfig = dashboardConfigs[user?.role?.toLowerCase()] || dashboardConfigs.student;
@@ -188,17 +202,42 @@ const RoleDashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {currentConfig.stats.map((stat, index) => (
-          <Card key={index} className="p-6 bg-white">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{stat.label}</h3>
-            <p className="text-3xl font-bold text-blue-600">{stat.value}</p>
-            {stat.change && (
-              <p className={`text-sm ${stat.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {stat.change > 0 ? '↑' : '↓'} {Math.abs(stat.change)}% from last month
-              </p>
-            )}
+        {loading ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index} className="p-6 bg-white">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </Card>
+          ))
+        ) : error ? (
+          <Card className="p-6 bg-white col-span-full">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Retry
+              </button>
+            </div>
           </Card>
-        ))}
+        ) : dashboardData?.stats ? (
+          dashboardData.stats.map((stat, index) => (
+            <Card key={index} className="p-6 bg-white">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{stat.label}</h3>
+              <p className="text-3xl font-bold text-blue-600">{stat.value}</p>
+            </Card>
+          ))
+        ) : (
+          currentConfig.stats.map((stat, index) => (
+            <Card key={index} className="p-6 bg-white">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{stat.label}</h3>
+              <p className="text-3xl font-bold text-blue-600">{stat.value}</p>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Quick Actions */}
@@ -229,9 +268,25 @@ const RoleDashboard = () => {
       <div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
         <Card className="divide-y divide-gray-200">
-          {currentConfig.activities.map((activity, index) => (
-            <ActivityItem key={index} activity={activity} />
-          ))}
+          {loading ? (
+            Array.from({ length: 2 }).map((_, index) => (
+              <div key={index} className="p-4">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))
+          ) : dashboardData?.activities ? (
+            dashboardData.activities.map((activity, index) => (
+              <ActivityItem key={index} activity={activity} />
+            ))
+          ) : (
+            currentConfig.activities.map((activity, index) => (
+              <ActivityItem key={index} activity={activity} />
+            ))
+          )}
         </Card>
       </div>
     </div>

@@ -42,8 +42,6 @@ router.delete("/profile/delete", handleTeacherProfileDelete);
 // router.get("/all", handleGetAllTeachers);
 // router.delete("/:id", handleDeleteTeacher);
 
-router.get("/dashboard", (req, res) => {
-  res.send("welcome to Teacher Dashboard");
-});
+router.get("/dashboard", handleGetDashboardData);
 
 module.exports = router;

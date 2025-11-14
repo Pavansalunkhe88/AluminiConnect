@@ -6,6 +6,7 @@ import AlumniProfileForm from "./ProfileSetup";
 
 const AlumniProfile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);

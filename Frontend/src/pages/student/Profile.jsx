@@ -3,6 +3,7 @@ import axios from "axios";
 import StudentProfileForm from "./ProfileSetup";
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);

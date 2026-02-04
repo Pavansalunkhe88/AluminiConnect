@@ -165,6 +165,26 @@ const AlumniProfile = () => {
             </div>
           </div>
         </div>
+
+        {/* Stats */}
+        <div className="flex justify-around border-t py-5 bg-gray-50">
+          <div className="text-center">
+            <p className="text-blue-600 font-bold text-lg">
+              {profile?.connections || 0}
+            </p>
+            <p className="text-gray-600 text-sm">Connections</p>
+          </div>
+          <div className="text-center">
+            <p className="text-green-600 font-bold text-lg">{profile?.post || 0}</p>
+            <p className="text-gray-600 text-sm">Posts</p>
+          </div>
+          <div className="text-center">
+            <p className="text-purple-600 font-bold text-lg">
+              {profile?.profileViews || 0}
+            </p>
+            <p className="text-gray-600 text-sm">Profile Views</p>
+          </div>
+        </div>
       </div>
 
       {/* Extra Sections */}

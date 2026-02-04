@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Card } from '../ui/Card';
+import {Link} from "react-router-dom"
 import StudentFeed from '../../pages/student/Feed';
 import StudentProfile from '../../pages/student/Profile';
 import StudentMessages from '../../pages/student/Messages';
@@ -89,7 +90,7 @@ const DashboardLayout = ({ children }) => {
         {/* Header */}
         <div className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-blue-600">Alumni Connect</h1>
+            <Link to={'/dashboard'} className="text-2xl font-bold text-blue-600">Alumni Connect</Link>
             
             {/* Navigation */}
             <div className="flex items-center space-x-8">
@@ -132,7 +133,7 @@ const DashboardLayout = ({ children }) => {
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100"
                 >
                   <img
-                    src={user?.avatar || 'https://ui-avatars.com/api/?name=' + user?.name}
+                    src={user?.profileImage?.url || 'https://ui-avatars.com/api/?name=' + user?.name}
                     alt={user?.name}
                     className="w-8 h-8 rounded-full"
                   />

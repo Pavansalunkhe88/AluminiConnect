@@ -11,6 +11,7 @@ import StudentFeed from '../pages/student/Feed';
 import TeacherFeed from '../pages/teacher/Feed';
 import TeacherProfile from '../pages/teacher/Profile';
 import ManageUser from '../pages/teacher/ManageUser';
+import Messages from '../pages/Messages';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import StudentProfileEdit from '../pages/student/ProfileSetup';
 import AlumniProfileEdit from '../pages/alumni/ProfileSetup';
@@ -81,6 +82,7 @@ const AppRoutes = () => {
               <Route path="dashboard" element={withDashboardLayout(<RoleDashboard />)} />
               <Route path="profile" element={withDashboardLayout(<StudentProfile />)} />
               <Route path="feed" element={withDashboardLayout(<StudentFeed />)} />
+              <Route path="messages" element={withDashboardLayout(<Messages />)} />
             </Routes>
           </ProtectedRoute>
         }
@@ -94,6 +96,7 @@ const AppRoutes = () => {
               <Route path="dashboard" element={withDashboardLayout(<RoleDashboard />)} />
               <Route path="profile" element={withDashboardLayout(<AlumniProfile />)} />
               <Route path="feed" element={withDashboardLayout(<AlumniFeed />)} />
+              <Route path="messages" element={withDashboardLayout(<Messages />)} />
             </Routes>
           </ProtectedRoute>
         }
@@ -108,6 +111,7 @@ const AppRoutes = () => {
               <Route path="feed" element={withDashboardLayout(<TeacherFeed />)} />
               <Route path="profile" element={withDashboardLayout(<TeacherProfile />)} />
               <Route path="manage" element={withDashboardLayout(<ManageUser />)} />
+              <Route path="messages" element={withDashboardLayout(<Messages />)} />
             </Routes>
           </ProtectedRoute>
         }

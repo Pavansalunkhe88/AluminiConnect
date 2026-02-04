@@ -5,14 +5,13 @@ import { Card } from '../ui/Card';
 import {Link} from "react-router-dom"
 import StudentFeed from '../../pages/student/Feed';
 import StudentProfile from '../../pages/student/Profile';
-import StudentMessages from '../../pages/student/Messages';
+import Messages from '../../pages/Messages';
 import AlumniProfile from '../../pages/alumni/Profile';
 import AlumniFeed from '../../pages/alumni/Feed';
-import AlumniMessages from '../../pages/alumni/Messages';
 import TeacherFeed from '../../pages/teacher/Feed';
 import TeacherProfile from '../../pages/teacher/Profile';
-import TeacherMessages from '../../pages/teacher/Messages';
 import RoleDashboard from '../Dashboard/RoleDashboard';
+import Connections from '../../pages/ConnectionPage';
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -64,21 +63,7 @@ const DashboardLayout = ({ children }) => {
   };
 
   const getMessagesComponent = () => {
-    switch (role) {
-      case 'student':
-        return StudentMessages;
-      case 'alumni':
-        return AlumniMessages;
-      case 'teacher':
-        return TeacherMessages;
-      default:
-        return () => (
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Messages</h2>
-            <p className="text-gray-600">No messages available for this role</p>
-          </Card>
-        );
-    }
+    return Messages;
   };
 
   // No longer needed after removing sidebar
@@ -107,10 +92,10 @@ const DashboardLayout = ({ children }) => {
                 Feed
               </button>
               <button
-                onClick={() => setActiveTab('directory')}
-                className={`px-3 py-2 font-medium ${activeTab === 'directory' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-800'}`}
+                onClick={() => setActiveTab('connections')}
+                className={`px-3 py-2 font-medium ${activeTab === 'connections' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-800'}`}
               >
-                Alumni Directory
+                Connections
               </button>
               <button
                 onClick={() => setActiveTab('messages')}
@@ -185,11 +170,10 @@ const DashboardLayout = ({ children }) => {
               {React.createElement(getFeedComponent())}
             </div>
           )}
-          {activeTab === 'directory' && (
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Alumni Directory</h2>
-              <p className="text-gray-600">Coming soon: Browse and connect with alumni</p>
-            </Card>
+          {activeTab === 'connections' && (
+            <div key="connections">
+              <Connections />
+            </div>
           )}
           {activeTab === 'messages' && (
             <div key="messages">

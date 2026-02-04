@@ -132,6 +132,7 @@ app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/alumni", alumniRoutes);
 
+
 // 404 fallback
 app.use((req, res) => {
   console.log("404, Page Not Found");

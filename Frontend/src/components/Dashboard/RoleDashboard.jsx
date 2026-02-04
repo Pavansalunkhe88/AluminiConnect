@@ -13,9 +13,9 @@ const dashboardConfigs = {
     ],
     actions: [
       {
-        title: "Connect with Alumni",
-        description: "Find and connect with alumni in your field",
-        buttonText: "Browse Directory",
+        title: "Connections",
+        description: "Manage your connections with alumni, teachers, and students",
+        buttonText: "View Connections",
         onClick: () => {},
         icon: '👥'
       },
@@ -104,6 +104,13 @@ const dashboardConfigs = {
       { label: "Avg. Performance", value: "85%" },
     ],
     actions: [
+      {
+        title: "Connections",
+        description: "Manage your connections with alumni, teachers, and students",
+        buttonText: "View Connections",
+        onClick: () => {},
+        icon: '👥'
+      },
       {
         title: "Student Management",
         description: "View and manage student records",

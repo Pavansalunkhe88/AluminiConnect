@@ -1,6 +1,9 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../model/registerUser/UserScehma");
+const Alumni = require("../model/Alumni");
+const Teacher = require("../model/Teacher");
+const Student = require("../model/Student");
 const {
   validateUserFromSample,
   validatePassword,
@@ -111,6 +114,8 @@ async function handleUserLogin(req, res) {
       return res.status(400).json({ message: "Invalid email" });
     }
 
+    console.log(user.role);
+
     // Compare entered password with stored hash
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -136,20 +141,25 @@ async function handleUserLogin(req, res) {
       maxAge: 24 * 60 * 60 * 1000, // 24 hour
     });
 
-    // switch (user.role) {
-    //   case "teacher":
-    //     return res.redirect("/api/teacher/dashboard");
-    //   case "admin":
-    //     return res.redirect("/api/admin/dashboard");
-    //   case "student":
-    //     return res.redirect("/api/student/dashboard");
-    //   case "alumni":
-    //     return res.redirect("/api/alumni/dashboard");
-    //   case "superadmin":
-    //     return res.redirect("/api/super-admin/dashboard");
-    //   default:
-    //     return res.status(403).json({ message: "Unauthorized role" });
-    // }
+    let profileImage = null;
+
+    if (user.role === "Student") {
+      const student = await Student.findOne({ user: user._id }).select(
+        "-__v -isActive -verified -createdAt -updatedAt"
+      );
+      profileImage = student?.profileImage || null;
+    } else if (user.role === "Alumni") {
+      const alumni = await Alumni.findOne({ user: user._id }).select(
+        "-__v -isActive -verified -createdAt -updatedAt"
+      );
+      profileImage = alumni?.profileImage || null;
+    } else if (user.role === "Teacher") {
+      const teacher = await Teacher.findOne({ user: user._id }).select(
+        "-__v -isActive -verified -createdAt -updatedAt"
+      );
+      console.log("Teacher found:", teacher);
+      profileImage = teacher?.profileImage || null;
+    }
 
     return res.status(200).json({
       message: `Welcome back ${user.name}`,
@@ -157,6 +167,7 @@ async function handleUserLogin(req, res) {
         _id: user._id,
         name: user.name,
         role: user.role,
+        profileImage: profileImage,
         // email: user.email,
       },
       token,

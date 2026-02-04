@@ -1,23 +1,117 @@
+// const dotenv = require("dotenv");
+// const express = require("express");
+// const app = express();
+// const http = require('http')
+// const { Server } = require("socket.io");
+// const cors = require('cors');
+// const { connectMongoDB } = require("./connection");
+// const cookieParser = require('cookie-parser');
+
+// dotenv.config();
+
+
+// // routes
+// const chatRoutes = require("./chat/routes/chatRoutes");
+// const setupChatSocket = require("./chat/sockets/chatSocket");
+// const adminRoutes = require("./routes/adminRoutes");
+// const alumniRoutes = require("./routes/alumniRoutes");
+// const studentRoutes = require("./routes/studentRoutes");
+// const teacherRoutes = require("./routes/teacherRoutes");
+// const loginRegister = require("./routes/loginRegisterRoutes");
+// const postRoutes = require('./routes/postRoutes')
+
+// const port = 4000;
+
+
+
+
+// // create server and socket.io
+// const server = http.createServer(app);
+// const io = new Server(server, {
+//   cors: { origin: "*" } // lock this down in prod
+// });
+
+// // wire sockets
+// setupChatSocket(io);
+
+// connectMongoDB("mongodb://127.0.0.1:27017/AlumniPortalDB");
+
+// app.use(cookieParser());
+// app.use(cors({
+//   origin: "http://localhost:5173",
+//   credentials: true
+// }));
+
+// app.use(express.urlencoded({ extended: true, limit: "10mb"}));
+// app.use(express.json({ limit: "10mb" }));
+
+// // mount chat routes
+// app.use("/api/chat", chatRoutes);
+
+
+
+
+// // app.get('/api/alumni', (req, res) => {
+// //     console.log(`Hey, I am Alumni`);
+// //     res.send(`Hey buddy`);
+// // });
+
+// //console.log(loginRegister);
+
+// app.use("/api", loginRegister);
+// app.use("/api/post", postRoutes);
+// app.use("/api/admin", adminRoutes);
+// app.use("/api/student", studentRoutes);
+// app.use("/api/teacher", teacherRoutes);
+// app.use("/api/alumni", alumniRoutes);
+
+// app.use((req, res) => {
+//   console.log("404, Page Not Found")
+//   res.status(404).send("Page Not Found!");
+// })
+
+// server.listen(port, () => {
+//   console.log(`Listening to port : ${port}`);
+// });
+
+
 const dotenv = require("dotenv");
 const express = require("express");
 const app = express();
-const cors = require('cors');
+const http = require("http");
+const { Server } = require("socket.io");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const { connectMongoDB } = require("./connection");
-const cookieParser = require('cookie-parser');
 
 dotenv.config();
 
-
-// routes
+const chatRoutes = require("./chat/routes/chatRoutes");
+const setupChatSocket = require("./chat/sockets/chatSocket");
 const adminRoutes = require("./routes/adminRoutes");
 const alumniRoutes = require("./routes/alumniRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
 const loginRegister = require("./routes/loginRegisterRoutes");
-const postRoutes = require('./routes/postRoutes')
+const postRoutes = require("./routes/postRoutes");
 
 const port = 4000;
 
+// Create REAL HTTP server
+const server = http.createServer(app);
+
+// SOCKET.IO SERVER INIT
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",   // React Vite
+    credentials: true
+  }
+});
+
+// Attach chat socket logic
+setupChatSocket(io);
+
+// CONNECT MONGO
 connectMongoDB("mongodb://127.0.0.1:27017/AlumniPortalDB");
 
 app.use(cookieParser());
@@ -26,19 +120,11 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.urlencoded({ extended: true, limit: "10mb"}));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.json({ limit: "10mb" }));
 
-
-
-
-// app.get('/api/alumni', (req, res) => {
-//     console.log(`Hey, I am Alumni`);
-//     res.send(`Hey buddy`);
-// });
-
-//console.log(loginRegister);
-
+// API routes
+app.use("/api/chat", chatRoutes);
 app.use("/api", loginRegister);
 app.use("/api/post", postRoutes);
 app.use("/api/admin", adminRoutes);
@@ -46,11 +132,13 @@ app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/alumni", alumniRoutes);
 
+// 404 fallback
 app.use((req, res) => {
-  console.log("404, Page Not Found")
+  console.log("404, Page Not Found");
   res.status(404).send("Page Not Found!");
-})
+});
 
-app.listen(port, () => {
-  console.log(`Listening to port : ${port}`);
+// 🚀 START SERVER (IMPORTANT)
+server.listen(port, () => {
+  console.log(`🚀 Server + Socket.IO running on port ${port}`);
 });

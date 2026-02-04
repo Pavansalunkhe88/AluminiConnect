@@ -1,6 +1,7 @@
 const User = require("../model/registerUser/UserScehma");
 const bcrypt = require("bcrypt");
 const Alumni = require("../model/Alumni");
+const Post = require("../model/Posts");
 const { handleAddRemoveArray } = require("../utils/profileDataArray");
 const cloudinary = require("../utils/cloudinaryConfig");
 const fs = require("fs");
@@ -209,6 +210,8 @@ async function handleGetAlumniProfile(req, res) {
       "name email"
     );
 
+    let post = await Post.find({user: userId});
+
     if (!alumni) {
       return res.status(404).json({ message: "Profile not found" });
     }
@@ -219,6 +222,7 @@ async function handleGetAlumniProfile(req, res) {
       ...alumni,
       name: alumni.user?.name || "",
       email: alumni.user?.email || "",
+      post: post.length,
     });
   } catch (error) {
     console.error("Get Alumni Profile Error:", error);

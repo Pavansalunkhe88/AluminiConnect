@@ -327,5 +327,6 @@ module.exports = {
   handleDeleteAlumni,
   handleGetUserById,
   handleGetProfile,
-  handleGetDashboardData
+  handleGetDashboardData,
+  handleInsertDataToAlumniModel,
 };

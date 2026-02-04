@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const {
-  //handleGetTeacherProfile,
-  handleGetTeacherProfileToUpdate,
+  handleDeleteTeacher,
+  handleGetTeacherProfile,
+  handleInsertDataToTacherModel,
   handleUpdateTeacherProfile,
   handleTeacherProfileDelete,
   handleGetDashboardData
-} = require("../controller/teacher");
+} = require('../controller/teacher');
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 const upload = require("../middlewares/multer");

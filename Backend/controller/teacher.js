@@ -288,8 +288,8 @@ async function handleGetDashboardData(req, res) {
 
 module.exports = {
   handleDeleteTeacher,
-  //handleGetTeacherProfile,
-  //handleGetTeacherProfileToUpdate,
+  handleGetTeacherProfile,
+  handleInsertDataToTacherModel,
   handleUpdateTeacherProfile,
   handleTeacherProfileDelete,
   handleGetDashboardData

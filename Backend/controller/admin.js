@@ -1,4 +1,4 @@
-const User = require("../model/registerUser/UserScehma");
+const User = require("../model/registerUser/UserSchehma");
 
 // Example: replace later with actual DB model
 async function getAllAdmins(req, res) {
@@ -85,5 +85,10 @@ async function handleGetAllUsers(req, res) {
 }
 
 module.exports = {
+  getAdminById,
+  getAllAdmins,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin,
   handleGetAllUsers
 };

@@ -46,6 +46,7 @@ app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/alumni", alumniRoutes);
 
+
 app.use((req, res) => {
   console.log("404, Page Not Found")
   res.status(404).send("Page Not Found!");

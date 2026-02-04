@@ -6,7 +6,8 @@ const {
   handleDeleteAlumni,
   handleGetProfile,
   handleGetUserById,
-  handleGetDashboardData
+  handleGetDashboardData,
+  handleInsertDataToAlumniModel
 } = require("../controller/alumni");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
@@ -23,7 +24,7 @@ router.use(verifyToken, authorizeRoles("Alumni"));
 router.get("/dashboard", handleGetDashboardData);
 
 //  Profile
-router.get("/profile", handleGetAlumniProfile);
+router.get("/profile", handleGetProfile);
 router.post(
   "/profile",
   upload.fields([

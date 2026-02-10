@@ -115,128 +115,318 @@
 
 // export default MessageThread;
 
+// import React, { useState, useRef, useEffect } from "react";
+// import { useAuth } from "../../hooks/useAuth";
+// import MessageBubble from "./MessageBubble";
+// import { socket } from "../../api/socket";
+
+// import axios from "axios";
+
+// const MessageThread = ({ contact, onClose }) => {
+//   const { user } = useAuth();
+//   const [messages, setMessages] = useState([]);
+//   const [newMessage, setNewMessage] = useState("");
+
+//   const messagesEndRef = useRef(null);
+
+//   // Scroll always to latest message
+//   const scrollToBottom = () => {
+//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   };
+
+//   useEffect(() => {
+//     scrollToBottom();
+//   }, [messages]);
+
+//   // 1️⃣ Load previous messages when conversation opens
+//   useEffect(() => {
+//     if (!contact?._id || !user?._id) return;
+
+//     async function loadMessages() {
+//       const convRes = await axios.get(
+//         `http://localhost:4000/api/chat/messages/${contact.conversationId}`
+//       );
+
+//       setMessages(convRes.data.messages);
+//     }
+
+//     loadMessages();
+//   }, [contact, user]);
+
+//   // 2️⃣ Listen for incoming messages from Socket.IO
+//   useEffect(() => {
+//     socket.on("message:new", ({ message }) => {
+//       if (
+//         message.sender === contact._id ||
+//         message.sender === user._id
+//       ) {
+//         setMessages((prev) => [...prev, message]);
+//       }
+//     });
+
+//     return () => socket.off("message:new");
+//   }, [contact, user]);
+
+//   // 3️⃣ Send message function
+//   const handleSendMessage = (e) => {
+//     e.preventDefault();
+//     if (!newMessage.trim()) return;
+
+//     const payload = {
+//       from: user._id,
+//       to: contact._id,
+//       text: newMessage,
+//       tempId: Date.now(),
+//     };
+
+//     // Optimistic UI
+//     setMessages((prev) => [
+//       ...prev,
+//       {
+//         ...payload,
+//         sender: user._id,
+//         content: newMessage,
+//         isOwn: true,
+//       },
+//     ]);
+
+//     socket.emit("sendMessage", payload);
+
+//     setNewMessage("");
+//   };
+
+//   return (
+//     <div className="flex flex-col h-full">
+//       {/* Header */}
+//       <div className="flex items-center justify-between p-4 border-b bg-white">
+//         <div className="flex items-center space-x-3">
+//           <img
+//             src={contact.avatar}
+//             alt={contact.name}
+//             className="w-10 h-10 rounded-full"
+//           />
+//           <div>
+//             <h3 className="font-semibold text-gray-900">{contact.name}</h3>
+//             <p className="text-sm text-gray-500 capitalize">{contact.role}</p>
+//           </div>
+//         </div>
+//         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+//           X
+//         </button>
+//       </div>
+
+//       {/* Messages */}
+//       <div className="flex-1 overflow-y-auto p-4 space-y-2">
+//         {messages.map((message) => (
+//           <MessageBubble
+//             key={message._id || message.tempId}
+//             message={message}
+//             isOwn={message.sender === user._id}
+//           />
+//         ))}
+//         <div ref={messagesEndRef} />
+//       </div>
+
+//       {/* Input */}
+//       <div className="p-4 border-t bg-white">
+//         <form onSubmit={handleSendMessage} className="flex space-x-2">
+//           <input
+//             type="text"
+//             value={newMessage}
+//             onChange={(e) => setNewMessage(e.target.value)}
+//             placeholder="Type a message..."
+//             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+//           />
+//           <button
+//             type="submit"
+//             className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+//           >
+//             Send
+//           </button>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default MessageThread;
 
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import MessageBubble from "./MessageBubble";
 import { socket } from "../../api/socket";
-
-import axios from "axios";
+import { getMessages, postMessage, markSeen, deleteConversation  } from "../../api/chatApi";
 
 const MessageThread = ({ contact, onClose }) => {
   const { user } = useAuth();
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-
   const messagesEndRef = useRef(null);
 
-  // Scroll always to latest message
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
+  // ---------------- AUTO SCROLL ----------------
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 1️⃣ Load previous messages when conversation opens
+  // ---------------- LOAD MESSAGES + MARK SEEN ----------------
   useEffect(() => {
-    if (!contact?._id || !user?._id) return;
+    if (!contact?.id) return;
 
-    async function loadMessages() {
-      const convRes = await axios.get(
-        `http://localhost:4000/api/chat/messages/${contact.conversationId}`
-      );
+    let mounted = true;
 
-      setMessages(convRes.data.messages);
-    }
+    (async () => {
+      const msgs = await getMessages(contact.id);
+      if (mounted) {
+        setMessages(msgs);
+        await markSeen(contact.id);
+        // Emit socket event to notify all participants
+        socket.emit("seen", { conversationId: contact.id });
+      }
+    })();
 
-    loadMessages();
-  }, [contact, user]);
+    return () => {
+      mounted = false;
+    };
+  }, [contact]);
 
-  // 2️⃣ Listen for incoming messages from Socket.IO
+  // ---------------- SOCKET LISTENER FOR NEW MESSAGES ----------------
   useEffect(() => {
-    socket.on("message:new", ({ message }) => {
-      if (
-        message.sender === contact._id ||
-        message.sender === user._id
-      ) {
+    if (!contact?.id) return;
+
+    const handler = ({ message }) => {
+      if (message.conversationId === contact.id) {
         setMessages((prev) => [...prev, message]);
       }
-    });
+    };
 
-    return () => socket.off("message:new");
+    socket.on("message:new", handler);
+    return () => socket.off("message:new", handler);
+  }, [contact]);
+
+  // ---------------- SOCKET LISTENER FOR MESSAGES SEEN ----------------
+  useEffect(() => {
+    if (!contact?.id) return;
+
+    const seenHandler = ({ conversationId, userId }) => {
+      if (conversationId === contact.id && userId !== user._id) {
+        // Other user has seen the messages
+        // Mark all our sent messages in this conversation as seen
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.sender === user._id ? { ...m, seenBy: [userId] } : m
+          )
+        );
+      }
+    };
+
+    socket.on("messages:seen", seenHandler);
+    return () => socket.off("messages:seen", seenHandler);
   }, [contact, user]);
 
-  // 3️⃣ Send message function
-  const handleSendMessage = (e) => {
+  // ---------------- SEND MESSAGE ----------------
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
-    const payload = {
-      from: user._id,
-      to: contact._id,
+    const optimistic = {
+      _id: `temp-${Date.now()}`,
+      sender: user._id,
       text: newMessage,
-      tempId: Date.now(),
+      createdAt: new Date().toISOString(),
+      conversationId: contact.id,
     };
 
-    // Optimistic UI
-    setMessages((prev) => [
-      ...prev,
-      {
-        ...payload,
-        sender: user._id,
-        content: newMessage,
-        isOwn: true,
-      },
-    ]);
-
-    socket.emit("sendMessage", payload);
-
+    setMessages((prev) => [...prev, optimistic]);
     setNewMessage("");
+
+    try {
+      await postMessage({
+        conversationId: contact.id,
+        text: optimistic.text,
+      });
+    } catch {
+      // rollback
+      setMessages((prev) => prev.filter((m) => m._id !== optimistic._id));
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    if (!contact?.partner?.id) return;
+
+    const confirmDelete = window.confirm(
+      "This conversation will be removed only for you. Continue?",
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await deleteConversation(contact.partner.id);
+
+      // Clear messages
+      setMessages([]);
+
+      // Close chat panel
+      onClose();
+    } catch (err) {
+      console.error("Failed to delete conversation", err);
+      alert("Failed to delete conversation");
+    }
   };
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex items-center justify-between p-4 border-b bg-white">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-3">
           <img
-            src={contact.avatar}
-            alt={contact.name}
-            className="w-10 h-10 rounded-full"
+            src={contact.partner?.avatar}
+            alt={contact.partner?.name || "User"}
+            className="w-10 h-10 rounded-full object-cover"
           />
           <div>
-            <h3 className="font-semibold text-gray-900">{contact.name}</h3>
-            <p className="text-sm text-gray-500 capitalize">{contact.role}</p>
+            <div className="font-semibold text-gray-900">
+              {contact.partner?.name || "Unknown User"}
+            </div>
+            <div className="text-sm text-gray-500">
+              {contact.partner?.role || ""}
+            </div>
           </div>
         </div>
+        <div>
+          <button
+            onClick={handleDeleteChat}
+            className="px-4 py-2 text-red-500 hover:bg-gray-100 rounded"
+          >
+            Delete Chat
+          </button>
+        </div>
+
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-          X
+          ✕
         </button>
       </div>
 
-      {/* Messages */}
+      {/* MESSAGES */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
-        {messages.map((message) => (
+        {messages.map((m) => (
           <MessageBubble
-            key={message._id || message.tempId}
-            message={message}
-            isOwn={message.sender === user._id}
+            key={m._id}
+            message={m}
+            isOwn={m.sender === user._id}
           />
         ))}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* INPUT */}
       <div className="p-4 border-t bg-white">
         <form onSubmit={handleSendMessage} className="flex space-x-2">
           <input
-            type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+            className="flex-1 px-3 py-2 border rounded-lg"
           />
           <button
             type="submit"
@@ -251,4 +441,3 @@ const MessageThread = ({ contact, onClose }) => {
 };
 
 export default MessageThread;
-

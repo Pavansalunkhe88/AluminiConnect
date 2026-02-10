@@ -94,6 +94,7 @@ const studentRoutes = require("./routes/studentRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
 const loginRegister = require("./routes/loginRegisterRoutes");
 const postRoutes = require("./routes/postRoutes");
+const requestRoutes = require("./modules/connections/connectionRoutes");
 
 const port = 4000;
 
@@ -131,6 +132,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/alumni", alumniRoutes);
+app.use("/api/connections", requestRoutes);
 
 
 // 404 fallback

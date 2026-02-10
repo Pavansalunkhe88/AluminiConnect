@@ -1,148 +1,210 @@
-// const DEFAULT_KEEP = 20;
-
-// const chatCache = {
-//   lastMessages: new Map(),
-//   unreadCounts: new Map(),
-//   keep: DEFAULT_KEEP
-// };
-
-// function getCachedMessages(conversationId) {
-//   return chatCache.lastMessages.get(String(conversationId)) || null;
-// }
-
-// function setCachedMessages(conversationId, messages) {
-//   chatCache.lastMessages.set(String(conversationId), messages.slice(-chatCache.keep));
-// }
-
-// function pushCachedMessage(conversationId, message) {
-//   const key = String(conversationId);
-//   let arr = chatCache.lastMessages.get(key) || [];
-//   arr.push(message);
-
-//   if (arr.length > chatCache.keep) {
-//     arr.splice(0, arr.length - chatCache.keep);
-//   }
-
-//   chatCache.lastMessages.set(key, arr);
-// }
-
-// function incrementUnread(userId, conversationId) {
-//   const u = String(userId);
-//   const c = String(conversationId);
-
-//   let userMap = chatCache.unreadCounts.get(u) || new Map();
-//   let prev = userMap.get(c) || 0;
-
-//   userMap.set(c, prev + 1);
-//   chatCache.unreadCounts.set(u, userMap);
-// }
-
-// function resetUnread(userId, conversationId) {
-//   const u = String(userId), c = String(conversationId);
-//   let userMap = chatCache.unreadCounts.get(u) || new Map();
-//   userMap.set(c, 0);
-//   chatCache.unreadCounts.set(u, userMap);
-// }
-
-// module.exports = {
-//   chatCache,
-//   getCachedMessages,
-//   setCachedMessages,
-//   pushCachedMessage,
-//   incrementUnread,
-//   resetUnread
-// };
-
-
-// In-memory cache utilities. Replace internals with Redis calls in prod.
-
 const DEFAULT_KEEP = 20;
+const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-// Internal maps (module private)
-const _lastMessages = new Map(); // Map<conversationId, Array<message>>
-const _unreadCounts = new Map(); // Map<userId, Map<conversationId, count>>
+// Internal state
+const _lastMessages = new Map();   // Map<conversationId, { data: [], ts }>
+const _unreadCounts = new Map();   // Map<userId, Map<conversationId, { count, ts }>>
+
 let _keep = DEFAULT_KEEP;
+let _ttl = DEFAULT_TTL_MS;
 
+// Helpers
+function now() {
+  return Date.now();
+}
+
+function isExpired(ts) {
+  return now() - ts > _ttl;
+}
+
+function normalize(id) {
+  return String(id);
+}
+
+// Configuration
 function setKeep(n) {
-  _keep = parseInt(n, 10) || DEFAULT_KEEP;
+  const v = parseInt(n, 10);
+  if (!Number.isNaN(v) && v > 0) _keep = v;
 }
 
 function getKeep() {
   return _keep;
 }
 
+function setTTL(ms) {
+  const v = parseInt(ms, 10);
+  if (!Number.isNaN(v) && v > 0) _ttl = v;
+}
+
+function getTTL() {
+  return _ttl;
+}
+
+// Message cache (best-effort)
 function getCachedMessages(conversationId) {
-  return _lastMessages.has(String(conversationId))
-    ? [..._lastMessages.get(String(conversationId))]
-    : null;
+  try {
+    const key = normalize(conversationId);
+    const entry = _lastMessages.get(key);
+    if (!entry) return null;
+
+    if (isExpired(entry.ts)) {
+      _lastMessages.delete(key);
+      return null;
+    }
+
+    // defensive copy
+    return entry.data.slice();
+  } catch {
+    return null;
+  }
 }
 
 function setCachedMessages(conversationId, messages) {
-  const arr = Array.isArray(messages) ? messages.slice(-_keep) : [];
-  _lastMessages.set(String(conversationId), arr);
+  try {
+    const key = normalize(conversationId);
+    const arr = Array.isArray(messages)
+      ? messages.slice(-_keep)
+      : [];
+
+    _lastMessages.set(key, {
+      data: arr,
+      ts: now()
+    });
+  } catch {
+    // cache failure must be invisible
+  }
 }
 
 function pushCachedMessage(conversationId, message) {
-  const key = String(conversationId);
-  const arr = _lastMessages.get(key) || [];
-  arr.push(message);
-  if (arr.length > _keep) {
-    arr.splice(0, arr.length - _keep);
+  try {
+    const key = normalize(conversationId);
+    const entry = _lastMessages.get(key);
+
+    let arr = entry && !isExpired(entry.ts)
+      ? entry.data
+      : [];
+
+    arr.push(message);
+
+    if (arr.length > _keep) {
+      arr.splice(0, arr.length - _keep);
+    }
+
+    _lastMessages.set(key, {
+      data: arr,
+      ts: now()
+    });
+  } catch {
+    // ignore cache failures
   }
-  _lastMessages.set(key, arr);
 }
 
 function clearCachedMessages(conversationId) {
-  if (conversationId) _lastMessages.delete(String(conversationId));
-  else _lastMessages.clear();
+  try {
+    if (conversationId) {
+      _lastMessages.delete(normalize(conversationId));
+    } else {
+      _lastMessages.clear();
+    }
+  } catch {
+    // ignore
+  }
 }
 
+// Unread counters (ephemeral, UI-only hint)
 function incrementUnread(userId, conversationId) {
-  const user = String(userId),
-    conversation = String(conversationId);
-  const userMap = _unreadCounts.get(user) || new Map();
-  const prev = userMap.get(conversation) || 0;
-  userMap.set(conversation, prev + 1);
-  _unreadCounts.set(user, userMap);
+  try {
+    const user = normalize(userId);
+    const conv = normalize(conversationId);
+
+    let userMap = _unreadCounts.get(user);
+    if (!userMap) {
+      userMap = new Map();
+      _unreadCounts.set(user, userMap);
+    }
+
+    const entry = userMap.get(conv);
+    const count =
+      entry && !isExpired(entry.ts) ? entry.count : 0;
+
+    userMap.set(conv, {
+      count: count + 1,
+      ts: now()
+    });
+  } catch {
+    // ignore
+  }
 }
 
 function resetUnread(userId, conversationId) {
-  const user = String(userId),
-    conversation = String(conversationId);
-  const userMap = _unreadCounts.get(user) || new Map();
-  userMap.set(conversation, 0);
-  _unreadCounts.set(user, userMap);
+  try {
+    const user = normalize(userId);
+    const conv = normalize(conversationId);
+
+    let userMap = _unreadCounts.get(user);
+    if (!userMap) {
+      userMap = new Map();
+      _unreadCounts.set(user, userMap);
+    }
+
+    userMap.set(conv, {
+      count: 0,
+      ts: now()
+    });
+  } catch {
+    // ignore
+  }
 }
 
+/**
+ * IMPORTANT:
+ * This is NOT authoritative.
+ * Use only for real-time UI hints.
+ */
 function getUnread(userId, conversationId) {
-  const user = String(userId),
-    conversation = String(conversationId);
-  const userMap = _unreadCounts.get(user);
-  if (!userMap) return 0;
-  return userMap.get(conversation) || 0;
+  try {
+    const user = normalize(userId);
+    const conv = normalize(conversationId);
+
+    const userMap = _unreadCounts.get(user);
+    if (!userMap) return 0;
+
+    const entry = userMap.get(conv);
+    if (!entry || isExpired(entry.ts)) {
+      userMap.delete(conv);
+      return 0;
+    }
+
+    return entry.count;
+  } catch {
+    return 0;
+  }
 }
 
+// Maintenance
 function clearAll() {
   _lastMessages.clear();
   _unreadCounts.clear();
 }
 
 module.exports = {
-  // keep control
+  // config
   setKeep,
   getKeep,
+  setTTL,
+  getTTL,
 
-  // messages cache
+  // messages
   getCachedMessages,
   setCachedMessages,
   pushCachedMessage,
   clearCachedMessages,
 
-  // unread counters
+  // unread (best-effort)
   incrementUnread,
   resetUnread,
   getUnread,
 
-  // dev helper
+  // dev / ops
   clearAll,
 };

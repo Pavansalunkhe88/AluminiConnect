@@ -63,6 +63,11 @@ const userSchema = new mongoose.Schema(
           "Password must include uppercase, lowercase, number, and special character",
       },
     },
+    
+    connectionsCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

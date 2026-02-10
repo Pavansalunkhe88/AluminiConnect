@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-import { socket } from "../api/socket";
+import { socket, connectSocket } from "../api/socket";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -9,6 +9,9 @@ export const AuthProvider = ({ children }) => {
   // Socket connection setup — use local user state, not useAuth hook (which causes circular dependency)
   useEffect(() => {
     if (!user) return;
+
+    // Ensure socket is connected with current token
+    connectSocket(localStorage.getItem("token"));
 
     socket.on("connect", () => {
       socket.emit("join", user._id);

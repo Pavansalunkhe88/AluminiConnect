@@ -14,37 +14,6 @@ const { verifyToken } = require("../middlewares/authMiddleware");
 
 router.use(verifyToken, authorizeRoles("Student"));
 
-// router.get("/dashboard", (req, res) => {
-//   res.send("welcome to Student Dashboard");
-// });
-
-router.get("/dashboard", (req, res) => {
-  res.status(200).json({
-    success: true,
-    data: {
-      stats: [
-        { label: "Events Attended", value: 12 },
-        { label: "Alumni Connections", value: 45 },
-        { label: "Projects Completed", value: 8 }
-      ],
-      activities: [
-        {
-          type: "connection",
-          title: "New Connection",
-          description: "Connected with John Doe",
-          timestamp: "2 hours ago"
-        },
-        {
-          type: "event",
-          title: "Event Registration",
-          description: "Registered for Workshop",
-          timestamp: "1 day ago"
-        }
-      ]
-    }
-  });
-});
-
 
 // GET: Student profile
 router.get("/profile", handleGetStudentProfile);

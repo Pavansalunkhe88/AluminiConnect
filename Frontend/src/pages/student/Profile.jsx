@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+
+import axios from "axios";
+import StudentProfileForm from "./ProfileSetup";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -119,7 +121,7 @@ const ProfilePage = () => {
           </div>
 
           <button
-            onClick={() => navigate('/student/profile-setup')}
+            onClick={() => setEditing(true)}
             className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium"
           >
             Edit Profile

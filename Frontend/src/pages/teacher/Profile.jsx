@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import { useAuth } from "../../hooks/useAuth";
 import { Card } from "../../components/ui/Card";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import TeacherProfileForm from "./ProfileSetup";
 
 const TeacherProfile = () => {
   const { user } = useAuth();
@@ -153,14 +155,52 @@ const TeacherProfile = () => {
               <p className="text-sm">{profile?.college}</p>
             </div>
           </div>
-         
-         <button
-           onClick={() => navigate('/teacher/profile-setup')}
-           className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium"
-         >
+
+          <button
+            onClick={() => setEditing(true)}
+            className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium"
+          >
             Edit Profile
           </button>
+        </div> */}
 
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-32 relative">
+          {/* Cover Image background */}
+          {profile?.coverImage?.url && (
+            <img
+              src={profile.coverImage.url}
+              className="absolute top-0 left-0 w-full h-full object-cover opacity-70"
+              alt="Cover"
+            />
+          )}
+
+          <div className="absolute -bottom-10 left-10 flex items-center">
+            {/* Profile Image */}
+            {profile?.profileImage?.url ? (
+              <img
+                src={profile.profileImage.url}
+                alt="Teacher"
+                className="w-20 h-20 rounded-full border-4 border-white object-cover"
+              />
+            ) : (
+              <div className="bg-blue-600 text-white rounded-full w-20 h-20 flex items-center justify-center text-2xl font-bold border-4 border-white">
+                {profile?.name?.charAt(0)}
+              </div>
+            )}
+
+            <div className="ml-4 text-white">
+              <h2 className="text-xl font-semibold">{profile?.name}</h2>
+              <p className="text-sm">{profile?.designation}</p>
+              <p className="text-sm">{profile?.college}</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setEditing(true)}
+            className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium"
+          >
+            Edit Profile
+          </button>
         </div>
 
         {/* Main Info */}

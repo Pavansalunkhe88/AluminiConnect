@@ -292,5 +292,6 @@ module.exports = {
   //handleGetTeacherProfileToUpdate,
   handleUpdateTeacherProfile,
   handleTeacherProfileDelete,
-  handleGetDashboardData
+  handleInsertDataToTacherModel,
+  handleGetTeacherProfile,
 };

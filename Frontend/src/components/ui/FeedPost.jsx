@@ -20,9 +20,9 @@ const FeedPost = ({
     }
   };
 
-  console.log("comment.user:", comment._id);
-  console.log("currentUser._id:", currentUser._id);
-  console.log("currentUser.role:", currentUser.role);
+  console.log("comment.user:", comment?.user);
+  console.log("currentUser._id:", currentUser?._id);
+  console.log("currentUser.role:", currentUser?.role);
 
   return (
     <Card className="p-4 mb-4 hover:shadow-lg transition-shadow">
@@ -30,7 +30,7 @@ const FeedPost = ({
       <div className="flex items-center mb-4">
         <img
           src={
-            post.authorProfileImage ||
+            post?.authorProfileImage ||
             `https://ui-avatars.com/api/?name=${encodeURIComponent(
               post.authorName
             )}`
@@ -39,7 +39,7 @@ const FeedPost = ({
           className="w-10 h-10 rounded-full"
         />
         <div className="ml-3">
-          <h4 className="font-semibold text-gray-900">{post.authorName}</h4>
+          <h4 className="font-semibold text-gray-900">{post?.authorName}</h4>
           <p className="text-sm text-gray-500">
             {new Date(post.createdAt).toLocaleString()}
           </p>
@@ -47,10 +47,10 @@ const FeedPost = ({
 
         {/* DELETE BUTTON */}
         {(String(post.user?._id) ===
-          String(currentUser._id) ||
-          currentUser.role === "Admin") && (
+          String(currentUser?._id) ||
+          currentUser?.role === "Admin") && (
           <button
-            onClick={() => onDeletePost(post._id)}
+            onClick={() => onDeletePost(post?._id)}
             className="text-red-500 text-sm hover:underline ml-auto"
           >
             Delete

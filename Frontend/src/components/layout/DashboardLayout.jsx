@@ -12,6 +12,7 @@ import TeacherFeed from '../../pages/teacher/Feed';
 import TeacherProfile from '../../pages/teacher/Profile';
 import TeacherMessages from '../../pages/teacher/Messages';
 import RoleDashboard from '../Dashboard/RoleDashboard';
+import Directory from '../../pages/Directory';
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -185,10 +186,9 @@ const DashboardLayout = ({ children }) => {
             </div>
           )}
           {activeTab === 'directory' && (
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Alumni Directory</h2>
-              <p className="text-gray-600">Coming soon: Browse and connect with alumni</p>
-            </Card>
+            <div key="directory">
+              <Directory />
+            </div>
           )}
           {activeTab === 'messages' && (
             <div key="messages">

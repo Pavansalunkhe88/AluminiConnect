@@ -174,32 +174,31 @@ async function handleCreatePost(req, res) {
     let imageData = {};
     let authorProfileImage = null; // ✅ define it here — function-scope
 
-    // Fetch role-based profile image (regardless of whether file exists)
+    // Fetch role-based profile image (always normalize to string URL)
+    let profileImage = null;
     switch (user.role) {
       case "Student":
-        authorProfileImage =
-          (await Student.findOne({ userId: user._id }))?.profileImage || null;
+        profileImage = (await Student.findOne({ user: user._id }))?.profileImage || null;
         break;
       case "Teacher":
-        authorProfileImage =
-          (await Teacher.findOne({ userId: user._id }))?.profileImage || null;
+        profileImage = (await Teacher.findOne({ user: user._id }))?.profileImage || null;
         break;
       case "Alumni":
-        authorProfileImage =
-          (await Alumni.findOne({ userId: user._id }))?.profileImage || null;
+        profileImage = (await Alumni.findOne({ user: user._id }))?.profileImage || null;
         break;
       case "Admin":
-        authorProfileImage =
-          (await Admin.findOne({ userId: user._id }))?.profileImage || null;
+        profileImage = (await Admin.findOne({ user: user._id }))?.profileImage || null;
         break;
     }
+    // Normalize to string URL
+    authorProfileImage = profileImage && typeof profileImage === "object" ? profileImage.url : profileImage || null;
 
     // image upload now happens independently
     if (req.file) {
       const uploadResult = await cloudinary.uploader.upload(req.file.path, {
         folder: "alumni_posts",
         transformation: [
-          { width: 800, height: 800, crop: "fill", gravity: "auto" },
+          { width: 800, height: 800, crop: "limit" },
           { quality: "auto" },
         ],
         resource_type: "auto",

@@ -162,7 +162,7 @@ const TeacherProfile = () => {
           >
             Edit Profile
           </button>
-        </div> */}
+        </div> 
 
         <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-32 relative">
           {/* Cover Image background */}

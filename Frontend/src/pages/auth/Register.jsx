@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 // import './index.css'
 import { Link } from 'react-router-dom'
 import Header from '../../components/layout/Header'
+import BackButton from '../../components/ui/BackButton'
 
 const RegisterPage = () => {
   const [form, setForm] = useState({
@@ -100,6 +101,7 @@ const RegisterPage = () => {
     <Header />
     <div className="min-h-screen bg-white py-8 px-4 mt-15">
       <div className="max-w-md mx-auto">
+        <BackButton className="mb-2" />
         {/* Header Card */}
         <div className="bg-gray-50 rounded-lg shadow-md p-8 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">

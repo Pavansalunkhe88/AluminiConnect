@@ -23,6 +23,8 @@ const FeedPost = ({
   console.log("comment.user:", comment?.user);
   console.log("currentUser._id:", currentUser?._id);
   console.log("currentUser.role:", currentUser?.role);
+  console.log("ProfileImage For Feed Page", post?.authorProfileImage);
+  console.log("ProfileImage For Feed Page", post?.profileImage?.url);
 
   return (
     <Card className="p-4 mb-4 hover:shadow-lg transition-shadow">
@@ -30,10 +32,10 @@ const FeedPost = ({
       <div className="flex items-center mb-4">
         <img
           src={
-            post?.authorProfileImage ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              post.authorName
-            )}`
+            typeof post?.authorProfileImage === "string"
+              ? post.authorProfileImage
+              : post?.authorProfileImage?.url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(post.authorName)}`
           }
           alt={post.authorName}
           className="w-10 h-10 rounded-full"

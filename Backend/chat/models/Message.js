@@ -20,55 +20,61 @@ const messageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Conversation",
       required: true,
+      index: true
     },
+
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
-    },
-    text: {
-      type: String,
-      default: "",
+      required: true
     },
 
-    // file or image
-    attachment: { type: AttachmentSchema, default: null },
+    encryptedPayload: {
+      iv: {
+        type: String,
+        required: true
+      },
+      content: {
+        type: String,
+        required: true
+      },
+      tag: {
+        type: String,
+        required: true
+      }
+    },
 
-    delivered: {
-      type: Boolean,
-      default: false,
+    attachment: {
+      type: AttachmentSchema,
+      default: null
     },
 
     seenBy: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
+        ref: "User"
+      }
     ],
 
-    edited: {
-      type: Boolean,
-      default: false,
-    },
-
-    deletedFor: [
+    reactions: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-
-    // reactions stored as a map: { "👍": [userid1, userid2], "❤️": [...] }
-    reactions: {
-      type: Map,
-      of: [mongoose.Schema.Types.ObjectId],
-      default: {},
-    },
+        emoji: {
+          type: String,
+          required: true
+        },
+        userIds: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
+          }
+        ]
+      }
+    ]
   },
   { timestamps: true }
 );
 
-// INDEXES
+// compound index for chat history loading
 messageSchema.index({ conversationId: 1, createdAt: -1 });
 
 const Message = mongoose.model("Message", messageSchema);

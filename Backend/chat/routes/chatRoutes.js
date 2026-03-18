@@ -1,14 +1,29 @@
 const express = require("express");
 const router = express.Router();
-const chatController = require("../controllers/chatController");
+const {
+  handleGetConversations,
+  handleGetMessages,
+  handlePostMessage,
+  handleSeenConversation,
+  handleReaction,
+  handleDeleteChat
+} = require("../controllers/chatController");
+const {chatRateLimiter} = require("../utils/rateLimiter");
 const { verifyToken } = require("../../middlewares/authMiddleware"); // adjust path to your auth middleware
 
-//router.use(verifyToken);
+router.use(verifyToken);
 
-router.get("/conversations", chatController.getConversations);
-router.get("/messages/:conversationId", chatController.getMessages);
-router.post("/messages", chatController.postMessage);
-router.post("/seen", chatController.seenConversation);
-router.post("/reaction", chatController.reaction);
+router.use(chatRateLimiter);
+
+// Conversations
+router.get("/conversations", handleGetConversations);
+// Messages
+router.get("/messages/:conversationId", handleGetMessages);
+router.post("/messages", handlePostMessage); // creates message (and conv if needed)
+// Seen
+router.post("/seen", handleSeenConversation);
+// Reactions (still compatible with your controller)
+router.post("/reaction", handleReaction);
+router.delete("/conversation/:otherUserId", handleDeleteChat);
 
 module.exports = router;

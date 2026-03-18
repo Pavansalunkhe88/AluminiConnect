@@ -1,106 +1,13 @@
-// const Conversation = require("../models/Conversation");
-// const Message = require("../models/Message");
-// const {
-//   getCachedMessages,
-//   setCachedMessages,
-//   pushCachedMessage,
-//   incrementUnread,
-//   resetUnread
-// } = require("../utils/chatCache");
-
-// async function findOrCreateConversation(userAId, userBId) {
-//   let conv = await Conversation.findOne({
-//     participants: { $all: [userAId, userBId], $size: 2 }
-//   });
-
-//   if (!conv) {
-//     conv = await Conversation.create({
-//       participants: [userAId, userBId],
-//       unreadCount: {}
-//     });
-//   }
-
-//   return conv;
-// }
-
-// async function createMessage({ conversationId, sender, text, attachment }) {
-//   const msg = await Message.create({
-//     conversationId,
-//     sender,
-//     text,
-//     attachment
-//   });
-
-//   pushCachedMessage(conversationId, msg);
-
-//   const conv = await Conversation.findById(conversationId);
-
-//   if (conv) {
-//     conv.lastMessage = msg._id;
-
-//     conv.participants.forEach(p => {
-//       if (String(p) !== String(sender)) {
-//         const prev = conv.unreadCount.get(String(p)) || 0;
-//         conv.unreadCount.set(String(p), prev + 1);
-//         incrementUnread(p, conversationId);
-//       }
-//     });
-
-//     await conv.save();
-//   }
-
-//   return msg;
-// }
-
-// async function getMessagesPaginated(conversationId, { before, limit }) {
-//   if (!before) {
-//     const cached = getCachedMessages(conversationId);
-//     if (cached) {
-//       return { messages: cached, hasMore: cached.length === limit };
-//     }
-//   }
-
-//   const query = { conversationId };
-//   if (before) query.createdAt = { $lt: new Date(before) };
-
-//   let docs = await Message.find(query)
-//     .sort({ createdAt: -1 })
-//     .limit(parseInt(limit));
-
-//   let messages = docs.reverse();
-//   let hasMore = docs.length === parseInt(limit);
-
-//   if (!before) {
-//     setCachedMessages(conversationId, messages.slice(-20));
-//   }
-
-//   return { messages, hasMore };
-// }
-
-// async function markConversationSeen(conversationId, userId) {
-//   await Message.updateMany(
-//     { conversationId, seenBy: { $ne: userId } },
-//     { $addToSet: { seenBy: userId } }
-//   );
-
-//   const conv = await Conversation.findById(conversationId);
-//   if (conv) {
-//     conv.unreadCount.set(String(userId), 0);
-//     await conv.save();
-//   }
-
-//   resetUnread(userId, conversationId);
-// }
-
-// module.exports = {
-//   findOrCreateConversation,
-//   createMessage,
-//   getMessagesPaginated,
-//   markConversationSeen
-// };
-
 const Conversation = require("../models/Conversation");
 const Message = require("../models/Message");
+
+const { encrypt, decrypt } = require("../utils/crypto");
+const {
+  decryptConversationKey,
+  generateConversationKey,
+  encryptConversationKey,
+} = require("../security/keyManager");
+
 const {
   getCachedMessages,
   setCachedMessages,
@@ -109,112 +16,229 @@ const {
   resetUnread,
 } = require("../utils/chatCache");
 
-/**
- * findOrCreateConversation(userAId, userBId)
- */
-async function findOrCreateConversation(userAId, userBId) {
-  const conv = await Conversation.findOne({
-    participants: { $all: [userAId, userBId], $size: 2 },
-  });
+async function handleFindOrCreateConversation(userAId, userBId) {
+  try {
+    const existing = await Conversation.findOne({
+      participants: { $all: [userAId, userBId], $size: 2 },
+    });
 
-  if (conv) return conv;
+    if (existing) return existing;
 
-  const created = await Conversation.create({
-    participants: [userAId, userBId],
-    unreadCount: {},
-  });
-  return created;
+    const conversationKey = generateConversationKey();
+    const encryptedKey = encryptConversationKey(conversationKey);
+
+    const conversation = new Conversation({
+      participants: [userAId, userBId],
+      encryptedConversationKey: {
+        iv: encryptedKey.iv,
+        content: encryptedKey.content,
+        tag: encryptedKey.tag,
+        keyVersion: 1,
+      },
+      // initialize unread counters for both participants
+      unreadCount: [
+        { userId: userAId, count: 0 },
+        { userId: userBId, count: 0 },
+      ],
+    });
+
+    console.log("BEFORE save conversation");
+    await conversation.save();
+    console.log("AFTER save conversation", conversation._id);
+    try {
+      console.log(
+        "SAVED CONVERSATION DOC:",
+        JSON.stringify(
+          {
+            _id: conversation._id,
+            participants: conversation.participants,
+            encryptedConversationKey: conversation.encryptedConversationKey,
+          },
+          null,
+          2,
+        ),
+      );
+    } catch (e) {
+      console.warn("Could not serialize conversation for logging", e);
+    }
+
+    return conversation;
+  } catch (err) {
+    // internal logging only
+    console.error("findOrCreateConversation failed:", err);
+
+    throw new Error("Unable to create conversation");
+  }
 }
 
-/**
- * createMessage({ conversationId, sender, text, attachment })
- */
-async function createMessage({
+async function handleCreateMessage({
   conversationId,
   sender,
   text = "",
   attachment = null,
 }) {
-  const msg = await Message.create({
-    conversationId,
-    sender,
-    text,
-    attachment,
-  });
+  try {
+    const conv = await Conversation.findById(conversationId);
+    if (!conv) {
+      throw new Error("Conversation not found");
+    }
 
-  // Update cache
-  pushCachedMessage(conversationId, msg);
+    // const conversationKey = decryptConversationKey(
+    //   conv.encryptedConversationKey.value,
+    // );
 
-  // Update conversation lastMessage and unread count
-  const conv = await Conversation.findById(conversationId);
-  if (conv) {
+    const { iv, content, tag } = conv.encryptedConversationKey;
+
+    const conversationKey = decryptConversationKey({
+      iv,
+      content,
+      tag,
+    });
+
+    const encryptedPayload = encrypt(
+      text,
+      conversationKey,
+      `${conversationId}:${sender}`,
+    );
+
+    const msg = await Message.create({
+      conversationId,
+      sender,
+      encryptedPayload,
+      attachment,
+    });
+
+    // cache failure must NOT break message send
+    try {
+      pushCachedMessage(conversationId, msg);
+    } catch (cacheErr) {
+      console.warn("Cache push failed:", cacheErr);
+    }
+
+    // unread count update
     conv.lastMessage = msg._id;
+
+    // Consolidate any duplicate unread entries into a map
+    const countsMap = new Map();
+    (conv.unreadCount || []).forEach((u) => {
+      const uid = String(u.userId);
+      const prev = countsMap.get(uid) || 0;
+      countsMap.set(uid, prev + (u.count || 0));
+    });
+
+    // For 1:1 conversation, increment only the other participant(s)
     conv.participants.forEach((p) => {
       const pid = String(p);
-      if (pid !== String(sender)) {
-        const prev = conv.unreadCount.get(pid) || 0;
-        conv.unreadCount.set(pid, prev + 1);
-        incrementUnread(pid, conversationId);
-      }
-    });
-    await conv.save();
-  }
+      if (pid === String(sender)) return;
 
-  return msg;
+      const prev = countsMap.get(pid) || 0;
+      countsMap.set(pid, prev + 1);
+
+      // update ephemeral UI cache
+      incrementUnread(pid, conversationId);
+    });
+
+    // Rebuild unreadCount array from map
+    conv.unreadCount = Array.from(countsMap.entries()).map(([userId, count]) => ({ userId, count }));
+
+    await conv.save();
+    return msg;
+  } catch (err) {
+    console.error("createMessage failed:", err);
+
+    throw new Error("Unable to send message");
+  }
 }
 
-/**
- * getMessagesPaginated(conversationId, { before, limit })
- */
-async function getMessagesPaginated(
+async function handleGetMessagesPaginated(
   conversationId,
-  { before = null, limit = 20 } = {}
+  { before = null, limit = 20 } = {},
 ) {
-  // If no before and cache exists, return cached messages
-  if (!before) {
-    const cached = getCachedMessages(conversationId);
-    if (cached) {
-      const sliced = cached.slice(-limit);
-      const hasMore = sliced.length === limit; // conservative
-      return { messages: sliced, hasMore };
+  try {
+    // const conv = await Conversation.findById(conversationId);
+    // if (!conv) throw new Error("Conversation not found");
+
+    // const conversationKey = decryptConversationKey(
+    //   conv.encryptedConversationKey.value,
+    // );
+
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
     }
+
+    const { iv, content, tag } = conversation.encryptedConversationKey;
+
+    const conversationKey = decryptConversationKey({
+      iv,
+      content,
+      tag,
+    });
+
+    const q = { conversationId };
+    if (before) q.createdAt = { $lt: new Date(before) };
+
+    const docs = await Message.find(q).sort({ createdAt: -1 }).limit(limit);
+
+    const messages = docs
+      .reverse()
+      .map((m) => {
+        try {
+          return {
+            ...m.toObject(),
+            text: decrypt(
+              m.encryptedPayload,
+              conversationKey,
+              `${conversationId}:${m.sender}`,
+            ),
+          };
+        } catch {
+          // corrupted message → skip, don’t crash
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    return {
+      messages,
+      hasMore: docs.length === limit,
+    };
+  } catch (err) {
+    console.error("getMessagesPaginated failed:", err);
+    throw new Error("Unable to fetch messages");
   }
-
-  const q = { conversationId };
-  if (before) q.createdAt = { $lt: new Date(before) };
-
-  const docs = await Message.find(q)
-    .sort({ createdAt: -1 })
-    .limit(parseInt(limit, 10));
-
-  const messages = docs.reverse();
-  const hasMore = docs.length === parseInt(limit, 10);
-  if (!before) setCachedMessages(conversationId, messages.slice(-20));
-  return { messages, hasMore };
 }
 
 /**
  * markConversationSeen(conversationId, userId)
  */
-async function markConversationSeen(conversationId, userId) {
+async function handleMarkConversationSeen(conversationId, userId) {
   await Message.updateMany(
     { conversationId, seenBy: { $ne: userId } },
-    { $addToSet: { seenBy: userId } }
+    { $addToSet: { seenBy: userId } },
   );
 
   const conv = await Conversation.findById(conversationId);
   if (conv) {
-    conv.unreadCount.set(String(userId), 0);
+    const unreadEntry = conv.unreadCount.find(
+      (u) => String(u.userId) === String(userId)
+    );
+
+    if (unreadEntry) {
+      unreadEntry.count = 0;
+    }
+
     await conv.save();
   }
 
   resetUnread(userId, conversationId);
 }
 
+
 /**
  * addReaction(messageId, reaction, userId)
  */
-async function addReaction(messageId, reaction, userId) {
+async function handleAddReaction(messageId, reaction, userId) {
   // Use $addToSet to avoid duplicates
   const update = { $addToSet: {} };
   update.$addToSet[`reactions.${reaction}`] = userId;
@@ -225,20 +249,24 @@ async function addReaction(messageId, reaction, userId) {
 /**
  * removeReaction(messageId, reaction, userId)
  */
-async function removeReaction(messageId, reaction, userId) {
+async function handleRemoveReaction(messageId, reaction, userId) {
   const msg = await Message.findByIdAndUpdate(
     messageId,
     { $pull: { [`reactions.${reaction}`]: userId } },
-    { new: true }
+    { new: true },
   );
   return msg;
 }
 
 module.exports = {
-  findOrCreateConversation,
-  createMessage,
-  getMessagesPaginated,
-  markConversationSeen,
-  addReaction,
-  removeReaction,
+  handleFindOrCreateConversation,
+  handleCreateMessage,
+  handleGetMessagesPaginated,
+  handleMarkConversationSeen,
+  handleAddReaction,
+  handleRemoveReaction,
+  // backward-compatible aliases used by socket layer
+  findOrCreateConversation: handleFindOrCreateConversation,
+  createMessage: handleCreateMessage,
+  markConversationSeen: handleMarkConversationSeen,
 };

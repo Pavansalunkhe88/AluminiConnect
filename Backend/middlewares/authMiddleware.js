@@ -14,7 +14,7 @@ const verifyToken = (req, res, next) => {
   }
 
   const token = authHeader.replace("Bearer ", "").trim();
-
+  
   // Replace the above commented part to get token in cookies
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);

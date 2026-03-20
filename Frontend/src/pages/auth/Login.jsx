@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import Header from "../../components/layout/Header";
+import BackButton from "../../components/ui/BackButton";
 
 const LoginPage = () => {
   const [form, setForm] = useState({
@@ -26,17 +27,12 @@ const LoginPage = () => {
   async function onSubmit(e) {
     e.preventDefault();
 
-    if (!form.role) {
-      setStatus({ error: "Please select a role" });
-      return;
-    }
-
     setStatus("loading");
 
     try {
       const axios = (await import("axios")).default;
 
-      const res = await axios.post("/api/login", form, {
+      const res = await axios.post("/api/login", { email: form.email, password: form.password }, {
         headers: { "Content-Type": "application/json" },
         withCredentials: true,
       });
@@ -47,7 +43,7 @@ const LoginPage = () => {
       // Extract user and role, considering different response formats
       //const userData = data.user || data;
       const userData = data.user;
-      const userRole = userData.role || form.role;
+      const userRole = userData.role;
 
       if (!userRole) {
         console.error("Login response:", data);
@@ -79,7 +75,7 @@ const LoginPage = () => {
       // Get cleaned role and determine redirect path
       const role = userRole.toLowerCase();
       const redirectPath =
-        role === "admin" ? "/teacher/admin/dashboard" : `/${role}/dashboard`;
+        role === "admin" ? "/admin/dashboard" : `/${role}/dashboard`;
 
       // Show success message
       setStatus({ success: "Login successful! Redirecting..." });
@@ -92,7 +88,7 @@ const LoginPage = () => {
     } catch (err) {
       console.log(err.response?.data);
       const message =
-        err?.response?.data?.error || err.message || "Login failed";
+        err?.response?.data?.message || err?.response?.data?.error || err.message || "Login failed";
       setStatus({ error: message });
     }
   }
@@ -101,9 +97,10 @@ const LoginPage = () => {
     <>
       <Header />
       <div className="min-h-screen bg-white py-8 px-4">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto mt-12">
+          <BackButton className="mb-2" />
           {/* Header Card */}
-          <div className="bg-gray-50 rounded-lg shadow-md p-8 mb-6 mt-12">
+          <div className="bg-gray-50 rounded-lg shadow-md p-8 mb-6">
             <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
               Welcome Back
             </h1>
@@ -115,25 +112,6 @@ const LoginPage = () => {
           {/* Login Form Card */}
           <div className="bg-gray-50 rounded-lg shadow-md p-8">
             <form onSubmit={onSubmit} className="space-y-6">
-              {/* role selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Role
-                </label>
-                <select
-                  name="role"
-                  value={form.role || ""}
-                  onChange={onChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                  <option value="">Select role</option>
-                  <option value="student">Student</option>
-                  <option value="teacher">Teacher</option>
-                  <option value="alumni">Alumni</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
 
               {/* Email */}
               <div>

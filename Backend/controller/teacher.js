@@ -252,38 +252,76 @@ async function handleGetDashboardData(req, res) {
   try {
     const userId = req.user.id;
 
-    // Mock dynamic data - in real app, this would come from database
-    const dashboardData = {
-      stats: [
-        { label: "Students Taught", value: Math.floor(Math.random() * 100) + 50 },
-        { label: "Events Organized", value: Math.floor(Math.random() * 15) + 5 },
-        { label: "Resources Created", value: Math.floor(Math.random() * 25) + 10 },
-        { label: "Alumni Network", value: Math.floor(Math.random() * 200) + 100 }
-      ],
-      activities: [
-        {
-          type: "event",
-          title: "Career Fair",
-          description: "Organized annual career fair",
-          timestamp: "1 week ago"
-        },
-        {
-          type: "mentorship",
-          title: "Mentorship Program",
-          description: "Launched new mentorship initiative",
-          timestamp: "2 weeks ago"
-        }
-      ]
-    };
+    const Student = require("../model/Student");
+    const Alumni = require("../model/Alumni");
+    const Post = require("../model/Posts");
+
+    // Get teacher profile
+    const teacher = await Teacher.findOne({ user: userId }).populate("user", "name email");
+
+    const department = teacher?.department || "";
+
+    // Count students and alumni in same department
+    const totalStudents = department ? await Student.countDocuments({ department }) : 0;
+    const totalAlumni = department ? await Alumni.countDocuments({ department }) : 0;
+
+    // Posts by this teacher
+    const totalPosts = await Post.countDocuments({ user: userId });
+
+    const stats = [
+      { label: "Students in Dept", value: totalStudents },
+      { label: "Alumni in Dept", value: totalAlumni },
+      { label: "Experience (Yrs)", value: teacher?.experienceYears || 0 },
+      { label: "Posts Created", value: totalPosts },
+    ];
+
+    // Recent posts as activity
+    const recentPosts = await Post.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean();
+
+    const activities = recentPosts.map((post) => {
+      const timeAgo = getTimeAgo(post.createdAt);
+      return {
+        type: "post",
+        title: "Post",
+        description: post.content?.substring(0, 80) + (post.content?.length > 80 ? "..." : ""),
+        timestamp: timeAgo,
+      };
+    });
+
+    if (activities.length === 0 && teacher) {
+      activities.push({
+        type: "profile",
+        title: "Profile Active",
+        description: `Department: ${department || "Not set"}`,
+        timestamp: getTimeAgo(teacher.createdAt),
+      });
+    }
 
     res.status(200).json({
-      message: "Dashboard data retrieved successfully",
-      data: dashboardData
+      success: true,
+      data: { stats, activities },
     });
   } catch (err) {
-    console.error("Error fetching dashboard data:", err);
+    console.error("Error fetching teacher dashboard data:", err);
     res.status(500).json({ message: "Internal server error" });
   }
+}
+
+// Helper to convert dates to "X ago" format
+function getTimeAgo(date) {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  if (seconds < 60) return "Just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
 }
 
 module.exports = {
@@ -294,4 +332,6 @@ module.exports = {
   handleTeacherProfileDelete,
   handleInsertDataToTacherModel,
   handleGetTeacherProfile,
+  handleGetDashboardData,
 };
+

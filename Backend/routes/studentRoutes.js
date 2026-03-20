@@ -7,13 +7,17 @@ const {
   handleGetMyProfile,
   handleGetUserById,
   handleInsertDataToStudentModel,
-  handleGetStudentProfile
+  handleGetStudentProfile,
+  handleGetDashboardData,
 } = require("../controller/student");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 const { verifyToken } = require("../middlewares/authMiddleware");
 
 router.use(verifyToken, authorizeRoles("Student"));
 
+
+// GET: Student dashboard
+router.get("/dashboard", handleGetDashboardData);
 
 // GET: Student profile
 router.get("/profile", handleGetStudentProfile);

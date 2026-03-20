@@ -7,9 +7,10 @@ const dashboardConfigs = {
     welcomeMessage: (name) => `Welcome, ${name}!`,
     subtitle: (prn) => `PRN: ${prn}`,
     stats: [
-      { label: "Events Attended", value: "12" },
-      { label: "Alumni Connections", value: "45" },
-      { label: "Projects Completed", value: "8" }
+      { label: "Skills", value: "0" },
+      { label: "Projects", value: "0" },
+      { label: "Achievements", value: "0" },
+      { label: "Posts Created", value: "0" },
     ],
     actions: [
       {
@@ -36,16 +37,10 @@ const dashboardConfigs = {
     ],
     activities: [
       {
-        type: "connection",
-        title: "New Connection",
-        description: "Connected with John Doe from Tech Corp",
-        timestamp: "2 hours ago"
-      },
-      {
-        type: "event",
-        title: "Event Registration",
-        description: "Registered for Career Workshop",
-        timestamp: "1 day ago"
+        type: "info",
+        title: "Getting Started",
+        description: "Complete your profile to see activity here",
+        timestamp: "Now"
       }
     ]
   },
@@ -53,10 +48,10 @@ const dashboardConfigs = {
     welcomeMessage: (name) => `Welcome back, ${name}!`,
     subtitle: (year) => `Class of ${year}`,
     stats: [
-      { label: "Students Mentored", value: "8" },
-      { label: "Events Hosted", value: "3" },
-      { label: "Resources Shared", value: "15" },
-      { label: "Network Size", value: "120" }
+      { label: "Skills", value: "0" },
+      { label: "Achievements", value: "0" },
+      { label: "Contributions", value: "0" },
+      { label: "Posts Created", value: "0" },
     ],
     actions: [
       {
@@ -83,16 +78,10 @@ const dashboardConfigs = {
     ],
     activities: [
       {
-        type: "mentorship",
-        title: "New Mentee",
-        description: "Started mentoring Jane Smith",
-        timestamp: "3 hours ago"
-      },
-      {
-        type: "post",
-        title: "Career Insight",
-        description: "Posted about industry trends",
-        timestamp: "2 days ago"
+        type: "info",
+        title: "Getting Started",
+        description: "Create a post to see activity here",
+        timestamp: "Now"
       }
     ]
   },
@@ -100,8 +89,10 @@ const dashboardConfigs = {
     welcomeMessage: (name) => `Welcome, Prof. ${name}!`,
     subtitle: (department) => `Department: ${department}`,
     stats: [
-      { label: "Active Students", value: "150" },
-      { label: "Avg. Performance", value: "85%" },
+      { label: "Students in Dept", value: "0" },
+      { label: "Alumni in Dept", value: "0" },
+      { label: "Experience (Yrs)", value: "0" },
+      { label: "Posts Created", value: "0" },
     ],
     actions: [
       {
@@ -128,11 +119,11 @@ const dashboardConfigs = {
     ],
     activities: [
       {
-        type: "course",
-        title: "Course Update",
-        description: "Updated Database Management syllabus",
-        timestamp: "1 hour ago"
-      },
+        type: "info",
+        title: "Getting Started",
+        description: "Create a post to see activity here",
+        timestamp: "Now"
+      }
     ]
   }
 };
@@ -155,7 +146,7 @@ const RoleDashboard = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -172,8 +163,9 @@ const RoleDashboard = () => {
           setDashboardData(response.data.data);
         }
       } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError('Failed to load dashboard data');
+        // Silently fall back to static dashboard config data
+        // The API endpoint may not exist for all roles (e.g. student, teacher)
+        console.warn('Dashboard API not available, using default config:', err.message);
       } finally {
         setLoading(false);
       }
@@ -181,6 +173,8 @@ const RoleDashboard = () => {
 
     if (user?.role) {
       fetchDashboardData();
+    } else {
+      setLoading(false);
     }
   }, [user?.role]);
 
@@ -218,18 +212,6 @@ const RoleDashboard = () => {
               </div>
             </Card>
           ))
-        ) : error ? (
-          <Card className="p-6 bg-white col-span-full">
-            <div className="text-center">
-              <p className="text-red-600 mb-4">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Retry
-              </button>
-            </div>
-          </Card>
         ) : dashboardData?.stats ? (
           dashboardData.stats.map((stat, index) => (
             <Card key={index} className="p-6 bg-white">

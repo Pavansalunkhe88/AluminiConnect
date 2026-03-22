@@ -3,6 +3,9 @@ const User = require("../../model/registerUser/UserScehma");
 const resolveProfileImage = require("../../utils/profileImageResolver");
 const getAffiliation = require("../../utils/getAffiliation");
 const { Collection } = require("mongoose");
+const NotificationService = require("../notifications/notificationService");
+
+const notificationService = new NotificationService();
 
 async function handleSendRequest(req, res) {
   try {
@@ -44,6 +47,17 @@ async function handleSendRequest(req, res) {
       requesterId,
       recipientId,
       status: "PENDING",
+    });
+
+    await notificationService.createNotification({
+      recipient: recipientId,
+      sender: requesterId,
+      type: "FRIEND_REQUEST_RECEIVED",
+      entityId: request._id,
+      entityType: "FRIEND_REQUEST",
+      metadata: {
+        message: "You have a new friend request",
+      },
     });
 
     return res.status(201).json({
@@ -89,6 +103,17 @@ async function handleAcceptRequest(req, res) {
 
     connection.status = "ACCEPTED";
     await connection.save();
+
+    await notificationService.createNotification({
+      recipient: requesterId,
+      sender: receiverId,
+      type: "FRIEND_REQUEST_ACCEPTED",
+      entityId: connection._id,
+      entityType: "FRIEND_REQUEST",
+      metadata: {
+        message: "Your friend request has been accepted",
+      },
+    });
 
     return res.status(200).json({
       message: "Request accepted successfully.",

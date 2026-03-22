@@ -88,6 +88,7 @@ dotenv.config();
 
 const chatRoutes = require("./chat/routes/chatRoutes");
 const setupChatSocket = require("./chat/sockets/chatSocket");
+const setupSocket = require("./chat/sockets/index");
 const adminRoutes = require("./routes/adminRoutes");
 const alumniRoutes = require("./routes/alumniRoutes");
 const studentRoutes = require("./routes/studentRoutes");
@@ -95,6 +96,8 @@ const teacherRoutes = require("./routes/teacherRoutes");
 const loginRegister = require("./routes/loginRegisterRoutes");
 const postRoutes = require("./routes/postRoutes");
 const requestRoutes = require("./modules/connections/connectionRoutes");
+const NotificationService = require("./modules/notifications/notificationService");
+const { router: notificationRouter, setupNotificationRoutes, NotificationController } = require("./modules/notifications/notificationRoutes");
 
 const port = 4000;
 
@@ -109,8 +112,11 @@ const io = new Server(server, {
   }
 });
 
+const notificationService = new NotificationService(io);
+setupSocket(io, notificationService);
 // Attach chat socket logic
-setupChatSocket(io);
+//setupChatSocket(io);
+
 
 // CONNECT MONGO
 connectMongoDB("mongodb://127.0.0.1:27017/AlumniPortalDB");
@@ -124,6 +130,10 @@ app.use(cors({
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.json({ limit: "10mb" }));
 
+// INITIALIZE NOTIFICATION CONTROLLER WITH IO
+const notificationController = new NotificationController(notificationService, io);
+setupNotificationRoutes(notificationController);
+
 // API routes
 app.use("/api/chat", chatRoutes);
 app.use("/api", loginRegister);
@@ -133,6 +143,7 @@ app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/alumni", alumniRoutes);
 app.use("/api/connections", requestRoutes);
+app.use("/api/notifications", notificationRouter);
 
 
 // 404 fallback

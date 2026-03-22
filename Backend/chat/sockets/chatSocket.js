@@ -1,435 +1,399 @@
-// // /backend/chat/sockets/chatSocket.js
+// const chatService = require("../services/chatService");
+// const jwt = require("jsonwebtoken");
 
-// // MODELS
-// const Conversation = require("../models/Conversation");
-// const Message = require("../models/Message");
+// /**
+//  * Assumptions (MANDATORY):
+//  * 1. Socket authentication middleware already attaches:
+//  *    socket.user = { _id: ObjectId }
+//  * 2. chatService methods are production-safe:
+//  *    - findOrCreateConversation
+//  *    - createMessage
+//  *    - getMessagesPaginated
+//  *    - markConversationSeen
+//  *    - addReaction
+//  *    - removeReaction
+//  */
 
-// // CACHE UTILS
-// const {
-//   pushCachedMessage,
-//   incrementUnread,
-//   resetUnread
-// } = require("../utils/chatCache");
-
-// // MAIN SOCKET FUNCTION
 // function setupChatSocket(io) {
+//   // ---- SOCKET AUTH GUARD (HARD REQUIREMENT) ----
+//   // io.use((socket, next) => {
+//   //   if (!socket.request.user || !socket.request.user.id) {
+//   //     return next(new Error("Unauthorized socket connection"));
+//   //   }
+//   //   socket.userId = String(socket.request.user.id);
+//   //   next();
+//   // });
+
+//   io.use((socket, next) => {
+//     try {
+//       const token = socket.handshake.auth?.token;
+
+//       if (!token) {
+//         return next(new Error("Missing auth token"));
+//       }
+
+//       const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+//       // Attach user to socket
+//       socket.user = decoded;
+//       socket.userId = String(decoded.id);
+
+//       next();
+//     } catch (err) {
+//       return next(new Error("Invalid auth token"));
+//     }
+//   });
+
 //   io.on("connection", (socket) => {
-//     console.log("⚡ New socket connected:", socket.id);
+//     console.log("⚡ Socket connected:", socket.id, "User:", socket.userId);
 
-//     // 1. JOIN USER ROOM (required for private messaging)
+//     // 1. JOIN PERSONAL ROOM (NO USER ID FROM CLIENT)
 
-//     socket.on("join", (userId) => {
-//       if (!userId) return;
-
-//       socket.join(String(userId));
-//       console.log(`🔗 User ${userId} joined personal room`);
+//     socket.on("join", () => {
+//       socket.join(socket.userId);
 //     });
 
-//     // 2. SEND MESSAGE EVENT
+//     // 2. SEND MESSAGE
+//     // payload: { conversationId?, to, text?, attachment?, tempId }
 
 //     socket.on("sendMessage", async (payload) => {
 //       try {
-//         // Validate payload (PROTECT BACKEND)
 //         if (
 //           !payload ||
-//           !payload.from ||
-//           !payload.to ||
+//           (!payload.conversationId && !payload.to) ||
 //           (!payload.text && !payload.attachment)
 //         ) {
-//           return socket.emit("error", { message: "Invalid message payload" });
+//           return socket.emit("error", { message: "Invalid payload" });
 //         }
 
-//         const { conversationId, from, to, text, attachment, tempId } = payload;
+//         const sender = socket.userId;
+//         const {
+//           conversationId,
+//           to,
+//           text = "",
+//           attachment = null,
+//           tempId,
+//         } = payload;
 
-//         let conv = null;
 //         let convId = conversationId;
 
-//         // (A) FIND / CREATE CONVERSATION — with single DB access
-
+//         // Create conversation if needed
 //         if (!convId) {
-//           conv = await Conversation.findOne({
-//             participants: { $all: [from, to], $size: 2 }
-//           });
-
-//           // create new conversation if needed
-//           if (!conv) {
-//             conv = await Conversation.create({
-//               participants: [from, to],
-//               unreadCount: {}
-//             });
-//           }
-
+//           const conv = await chatService.findOrCreateConversation(
+//             sender,
+//             String(to),
+//           );
 //           convId = conv._id;
-//         } else {
-//           // if conversationId provided — fetch once
-//           conv = await Conversation.findById(convId);
 //         }
 
-//         if (!conv) {
-//           return socket.emit("error", { message: "Conversation not found" });
-//         }
-
-//         // (B) CREATE MESSAGE (DB WRITE)
-
-//         const newMessage = await Message.create({
+//         // Create message (ENCRYPTED inside service)
+//         const message = await chatService.createMessage({
 //           conversationId: convId,
-//           sender: from,
+//           sender,
 //           text,
-//           attachment
+//           attachment,
 //         });
 
-//         // (C) UPDATE CONVERSATION UNREAD & LAST MESSAGE — 1 write
-
-//         conv.lastMessage = newMessage._id;
-
-//         conv.participants.forEach((p) => {
-//           const pid = String(p);
-//           if (pid !== String(from)) {
-//             const prev = conv.unreadCount.get(pid) || 0;
-//             conv.unreadCount.set(pid, prev + 1);
-//             incrementUnread(pid, convId);  // cache update
-//           }
+//         // Ack to sender
+//         io.to(sender).emit("message:sent", {
+//           message,
+//           tempId,
 //         });
 
-//         await conv.save();
+//         // Deliver to receiver
+//         if (to) {
+//           io.to(String(to)).emit("message:new", {
+//             message,
+//           });
+//         }
 
-//         // (D) CACHE UPDATE — keep recent 20 messages in RAM
-
-//         pushCachedMessage(convId, newMessage);
-
-//         // (E) SEND BACK TO SENDER (ack with tempId)
-
-//         io.to(String(from)).emit("message:sent", {
-//           message: newMessage,
-//           tempId
-//         });
-
-//         //  (F) SEND MESSAGE TO RECEIVER
-
-//         io.to(String(to)).emit("message:new", {
-//           message: newMessage
-//         });
-
-//         // (G) UPDATE BOTH SIDEBARS
-
-//         io.to(String(from)).emit("conversation:update", {
+//         // Sidebar update
+//         io.to(sender).emit("conversation:update", {
 //           conversationId: convId,
-//           lastMessage: newMessage
+//           lastMessage: message,
 //         });
 
-//         io.to(String(to)).emit("conversation:update", {
-//           conversationId: convId,
-//           lastMessage: newMessage
-//         });
-
+//         if (to) {
+//           io.to(String(to)).emit("conversation:update", {
+//             conversationId: convId,
+//             lastMessage: message,
+//           });
+//         }
 //       } catch (err) {
-//         console.error("❌ sendMessage error:", err);
+//         console.error("sendMessage socket error:", err);
 //         socket.emit("error", { message: "Failed to send message" });
 //       }
 //     });
 
-//     // 3. SEEN EVENT — mark messages as seen
+//     // 3. MARK CONVERSATION SEEN
+//     // payload: { conversationId }
 
-//     socket.on("seen", async ({ conversationId, userId }) => {
+//     socket.on("seen", async ({ conversationId }) => {
 //       try {
-//         if (!conversationId || !userId) return;
+//         if (!conversationId) return;
 
-//         // Update only unseen messages — NOT all messages (performance)
-//         await Message.updateMany(
-//           { conversationId, seenBy: { $ne: userId } },
-//           { $addToSet: { seenBy: userId } }
-//         );
+//         // Mark messages as seen in DB
+//         await chatService.markConversationSeen(conversationId, socket.userId);
 
-//         // Update unread counter
+//         // Fetch conversation to get all participants
+//         const Conversation = require("../models/Conversation");
 //         const conv = await Conversation.findById(conversationId);
-//         if (conv) {
-//           conv.unreadCount.set(String(userId), 0);
-//           await conv.save();
-//         }
+        
+//         if (!conv) return;
 
-//         resetUnread(userId, conversationId);
-
-//         // Broadcast seen event
-//         if (conv && conv.participants) {
-//           conv.participants.forEach((p) => {
-//             io.to(String(p)).emit("message:seen", {
-//               conversationId,
-//               userId
-//             });
+//         // Broadcast to ALL participants that this user has seen the conversation
+//         conv.participants.forEach((p) => {
+//           io.to(String(p)).emit("messages:seen", {
+//             conversationId,
+//             userId: socket.userId,
 //           });
-//         }
-
+//         });
 //       } catch (err) {
-//         console.error("❌ seen error:", err);
+//         console.error("seen socket error:", err);
 //       }
 //     });
 
 //     // 4. ADD REACTION
+//     // payload: { messageId, reaction }
 
-//     socket.on("addReaction", async ({ messageId, reaction, userId }) => {
+//     socket.on("addReaction", async ({ messageId, reaction }) => {
 //       try {
-//         if (!messageId || !reaction || !userId) return;
+//         if (!messageId || !reaction) return;
 
-//         const msg = await Message.findByIdAndUpdate(
+//         const msg = await chatService.addReaction(
 //           messageId,
-//           { $addToSet: { [`reactions.${reaction}`]: userId } },
-//           { new: true }
+//           reaction,
+//           socket.userId,
 //         );
 
 //         if (!msg) return;
 
-//         const conv = await Conversation.findById(msg.conversationId);
-//         if (!conv) return;
-
-//         conv.participants.forEach((p) => {
-//           io.to(String(p)).emit("message:reaction", { message: msg });
-//         });
-
+//         io.to(socket.userId).emit("message:reaction", { message: msg });
 //       } catch (err) {
-//         console.error("❌ addReaction error:", err);
+//         console.error("addReaction socket error:", err);
 //       }
 //     });
 
 //     // 5. REMOVE REACTION
+//     // payload: { messageId, reaction }
 
-//     socket.on("removeReaction", async ({ messageId, reaction, userId }) => {
+//     socket.on("removeReaction", async ({ messageId, reaction }) => {
 //       try {
-//         if (!messageId || !reaction || !userId) return;
+//         if (!messageId || !reaction) return;
 
-//         const msg = await Message.findByIdAndUpdate(
+//         const msg = await chatService.removeReaction(
 //           messageId,
-//           { $pull: { [`reactions.${reaction}`]: userId } },
-//           { new: true }
+//           reaction,
+//           socket.userId,
 //         );
 
 //         if (!msg) return;
 
-//         const conv = await Conversation.findById(msg.conversationId);
-//         if (!conv) return;
-
-//         conv.participants.forEach((p) => {
-//           io.to(String(p)).emit("message:reaction", { message: msg });
-//         });
-
+//         io.to(socket.userId).emit("message:reaction", { message: msg });
 //       } catch (err) {
-//         console.error("❌ removeReaction error:", err);
+//         console.error("removeReaction socket error:", err);
 //       }
 //     });
 
-//     // 6. DISCONNECT EVENT
-
+//     // 6. DISCONNECT
 //     socket.on("disconnect", () => {
-//       console.log("🔌 Socket disconnected:", socket.id);
+//       console.log("Socket disconnected:", socket.id);
 //     });
-
-//   }); // end io.on
+//   });
 // }
 
 // module.exports = setupChatSocket;
 
-// backend/chat/sockets/chatSocket.js
-
 const chatService = require("../services/chatService");
-const jwt = require("jsonwebtoken");
+const NotificationService = require("../../modules/notifications/notificationService");
 
 /**
- * Assumptions (MANDATORY):
- * 1. Socket authentication middleware already attaches:
- *    socket.user = { _id: ObjectId }
- * 2. chatService methods are production-safe:
- *    - findOrCreateConversation
- *    - createMessage
- *    - getMessagesPaginated
- *    - markConversationSeen
- *    - addReaction
- *    - removeReaction
+ * This file ONLY attaches event handlers to an already connected socket.
+ * NO io.on("connection")
+ * NO io.use()
  */
 
-function setupChatSocket(io) {
-  // ---- SOCKET AUTH GUARD (HARD REQUIREMENT) ----
-  // io.use((socket, next) => {
-  //   if (!socket.request.user || !socket.request.user.id) {
-  //     return next(new Error("Unauthorized socket connection"));
-  //   }
-  //   socket.userId = String(socket.request.user.id);
-  //   next();
-  // });
+function setupChatSocket(socket) {
+  const io = socket.server; // access global io safely
+  const notificationService = new NotificationService(io);
 
-  io.use((socket, next) => {
-    try {
-      const token = socket.handshake.auth?.token;
+  console.log("💬 Chat module attached for user:", socket.userId);
 
-      if (!token) {
-        return next(new Error("Missing auth token"));
-      }
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-
-      // Attach user to socket
-      socket.user = decoded;
-      socket.userId = String(decoded.id);
-
-      next();
-    } catch (err) {
-      return next(new Error("Invalid auth token"));
-    }
+  // -----------------------------
+  // 1. JOIN PERSONAL ROOM
+  // -----------------------------
+  socket.on("join", () => {
+    socket.join(socket.userId);
   });
 
-  io.on("connection", (socket) => {
-    console.log("⚡ Socket connected:", socket.id, "User:", socket.userId);
+  // -----------------------------
+  // 2. SEND MESSAGE
+  // -----------------------------
+  socket.on("sendMessage", async (payload) => {
+    try {
+      if (
+        !payload ||
+        (!payload.conversationId && !payload.to) ||
+        (!payload.text && !payload.attachment)
+      ) {
+        return socket.emit("error", { message: "Invalid payload" });
+      }
 
-    // 1. JOIN PERSONAL ROOM (NO USER ID FROM CLIENT)
+      const sender = socket.userId;
+      const {
+        conversationId,
+        to,
+        text = "",
+        attachment = null,
+        tempId,
+      } = payload;
 
-    socket.on("join", () => {
-      socket.join(socket.userId);
-    });
+      let convId = conversationId;
 
-    // 2. SEND MESSAGE
-    // payload: { conversationId?, to, text?, attachment?, tempId }
-
-    socket.on("sendMessage", async (payload) => {
-      try {
-        if (
-          !payload ||
-          (!payload.conversationId && !payload.to) ||
-          (!payload.text && !payload.attachment)
-        ) {
-          return socket.emit("error", { message: "Invalid payload" });
-        }
-
-        const sender = socket.userId;
-        const {
-          conversationId,
-          to,
-          text = "",
-          attachment = null,
-          tempId,
-        } = payload;
-
-        let convId = conversationId;
-
-        // Create conversation if needed
-        if (!convId) {
-          const conv = await chatService.findOrCreateConversation(
-            sender,
-            String(to),
-          );
-          convId = conv._id;
-        }
-
-        // Create message (ENCRYPTED inside service)
-        const message = await chatService.createMessage({
-          conversationId: convId,
+      // Create conversation if needed
+      if (!convId) {
+        const conv = await chatService.findOrCreateConversation(
           sender,
-          text,
-          attachment,
-        });
+          String(to)
+        );
+        convId = conv._id;
+      }
 
-        // Ack to sender
-        io.to(sender).emit("message:sent", {
+      // Create message (ENCRYPTED inside service)
+      const message = await chatService.createMessage({
+        conversationId: convId,
+        sender,
+        text,
+        attachment,
+      });
+
+      // Create notification record for recipient
+      let recipientId = to;
+      if (!recipientId && convId) {
+        const Conversation = require("../models/Conversation");
+        const conv = await Conversation.findById(convId);
+        recipientId = conv?.participants?.find(
+          (p) => String(p) !== String(sender),
+        );
+      }
+
+      if (recipientId) {
+        await notificationService.createNotification({
+          recipient: recipientId,
+          sender,
+          type: "NEW_MESSAGE",
+          entityId: message._id,
+          entityType: "MESSAGE",
+          metadata: { text: message.text },
+        });
+      }
+
+      // ✅ ACK to sender
+      io.to(sender).emit("message:sent", {
+        message,
+        tempId,
+      });
+
+      // ✅ Deliver to receiver
+      if (to) {
+        io.to(String(to)).emit("message:new", {
           message,
-          tempId,
         });
+      }
 
-        // Deliver to receiver
-        if (to) {
-          io.to(String(to)).emit("message:new", {
-            message,
-          });
-        }
+      // ✅ Sidebar updates
+      io.to(sender).emit("conversation:update", {
+        conversationId: convId,
+        lastMessage: message,
+      });
 
-        // Sidebar update
-        io.to(sender).emit("conversation:update", {
+      if (to) {
+        io.to(String(to)).emit("conversation:update", {
           conversationId: convId,
           lastMessage: message,
         });
-
-        if (to) {
-          io.to(String(to)).emit("conversation:update", {
-            conversationId: convId,
-            lastMessage: message,
-          });
-        }
-      } catch (err) {
-        console.error("sendMessage socket error:", err);
-        socket.emit("error", { message: "Failed to send message" });
       }
-    });
+    } catch (err) {
+      console.error("sendMessage socket error:", err);
+      socket.emit("error", { message: "Failed to send message" });
+    }
+  });
 
-    // 3. MARK CONVERSATION SEEN
-    // payload: { conversationId }
+  // -----------------------------
+  // 3. MARK CONVERSATION SEEN
+  // -----------------------------
+  socket.on("seen", async ({ conversationId }) => {
+    try {
+      if (!conversationId) return;
 
-    socket.on("seen", async ({ conversationId }) => {
-      try {
-        if (!conversationId) return;
+      await chatService.markConversationSeen(
+        conversationId,
+        socket.userId
+      );
 
-        // Mark messages as seen in DB
-        await chatService.markConversationSeen(conversationId, socket.userId);
+      const Conversation = require("../models/Conversation");
+      const conv = await Conversation.findById(conversationId);
 
-        // Fetch conversation to get all participants
-        const Conversation = require("../models/Conversation");
-        const conv = await Conversation.findById(conversationId);
-        
-        if (!conv) return;
+      if (!conv) return;
 
-        // Broadcast to ALL participants that this user has seen the conversation
-        conv.participants.forEach((p) => {
-          io.to(String(p)).emit("messages:seen", {
-            conversationId,
-            userId: socket.userId,
-          });
+      conv.participants.forEach((p) => {
+        io.to(String(p)).emit("messages:seen", {
+          conversationId,
+          userId: socket.userId,
         });
-      } catch (err) {
-        console.error("seen socket error:", err);
-      }
-    });
+      });
+    } catch (err) {
+      console.error("seen socket error:", err);
+    }
+  });
 
-    // 4. ADD REACTION
-    // payload: { messageId, reaction }
+  // -----------------------------
+  // 4. ADD REACTION
+  // -----------------------------
+  socket.on("addReaction", async ({ messageId, reaction }) => {
+    try {
+      if (!messageId || !reaction) return;
 
-    socket.on("addReaction", async ({ messageId, reaction }) => {
-      try {
-        if (!messageId || !reaction) return;
+      const msg = await chatService.addReaction(
+        messageId,
+        reaction,
+        socket.userId
+      );
 
-        const msg = await chatService.addReaction(
-          messageId,
-          reaction,
-          socket.userId,
-        );
+      if (!msg) return;
 
-        if (!msg) return;
+      io.to(socket.userId).emit("message:reaction", { message: msg });
+    } catch (err) {
+      console.error("addReaction socket error:", err);
+    }
+  });
 
-        io.to(socket.userId).emit("message:reaction", { message: msg });
-      } catch (err) {
-        console.error("addReaction socket error:", err);
-      }
-    });
+  // -----------------------------
+  // 5. REMOVE REACTION
+  // -----------------------------
+  socket.on("removeReaction", async ({ messageId, reaction }) => {
+    try {
+      if (!messageId || !reaction) return;
 
-    // 5. REMOVE REACTION
-    // payload: { messageId, reaction }
+      const msg = await chatService.removeReaction(
+        messageId,
+        reaction,
+        socket.userId
+      );
 
-    socket.on("removeReaction", async ({ messageId, reaction }) => {
-      try {
-        if (!messageId || !reaction) return;
+      if (!msg) return;
 
-        const msg = await chatService.removeReaction(
-          messageId,
-          reaction,
-          socket.userId,
-        );
+      io.to(socket.userId).emit("message:reaction", { message: msg });
+    } catch (err) {
+      console.error("removeReaction socket error:", err);
+    }
+  });
 
-        if (!msg) return;
-
-        io.to(socket.userId).emit("message:reaction", { message: msg });
-      } catch (err) {
-        console.error("removeReaction socket error:", err);
-      }
-    });
-
-    // 6. DISCONNECT
-    socket.on("disconnect", () => {
-      console.log("Socket disconnected:", socket.id);
-    });
+  // -----------------------------
+  // 6. DISCONNECT
+  // -----------------------------
+  socket.on("disconnect", () => {
+    console.log("❌ Chat socket disconnected:", socket.userId);
   });
 }
 

@@ -285,75 +285,6 @@ async function handleGetProfile(req, res) {
 
 
 
-async function handleGetDashboardData(req, res) {
-  try {
-    const userId = req.user.id;
-
-    // Get alumni profile
-    const alumni = await Alumni.findOne({ user: userId }).populate("user", "name email");
-
-    // Posts by this alumni
-    const totalPosts = await Post.countDocuments({ user: userId });
-
-    // Get total likes received
-    const userPosts = await Post.find({ user: userId });
-    const totalLikes = userPosts.reduce((sum, post) => sum + (post.likes?.length || 0), 0);
-
-    const stats = [
-      { label: "Skills", value: alumni?.skills?.length || 0 },
-      { label: "Achievements", value: alumni?.achievements?.length || 0 },
-      { label: "Contributions", value: alumni?.contributions?.length || 0 },
-      { label: "Posts Created", value: totalPosts },
-    ];
-
-    // Recent posts as activity
-    const recentPosts = await Post.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .lean();
-
-    const activities = recentPosts.map((post) => {
-      const timeAgo = getTimeAgo(post.createdAt);
-      return {
-        type: "post",
-        title: "Post",
-        description: post.content?.substring(0, 80) + (post.content?.length > 80 ? "..." : ""),
-        timestamp: timeAgo,
-      };
-    });
-
-    if (activities.length === 0 && alumni) {
-      activities.push({
-        type: "profile",
-        title: "Profile Active",
-        description: `Class of ${alumni.graduationYear || "N/A"} — ${alumni.currentCompany || "No company set"}`,
-        timestamp: getTimeAgo(alumni.createdAt),
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: { stats, activities },
-    });
-  } catch (err) {
-    console.error("Error fetching alumni dashboard data:", err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
-
-// Helper to convert dates to "X ago" format
-function getTimeAgo(date) {
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-  if (seconds < 60) return "Just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
-}
 
 module.exports = {
   getAllAlumni,
@@ -366,6 +297,4 @@ module.exports = {
   handleGetUserById,
   handleInsertDataToAlumniModel,
   handleGetAlumniProfile,
-  handleGetDashboardData,
 };
-

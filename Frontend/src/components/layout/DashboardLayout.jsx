@@ -103,13 +103,9 @@ const DashboardLayout = ({ children }) => {
               >
                 Messages
               </button>
-              <button
-                onClick={() => setActiveTab('notifications')}
-                className={`px-3 py-2 font-medium relative ${activeTab === 'notifications' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-800'}`}
-              >
-                Notifications
-                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">5</span>
-              </button>
+              
+              {/* Notification Dropdown Component */}
+              <NotificationDropdown />
 
               {/* Profile Dropdown */}
               <div className="relative">
@@ -179,12 +175,6 @@ const DashboardLayout = ({ children }) => {
             <div key="messages">
               {React.createElement(getMessagesComponent())}
             </div>
-          )}
-          {activeTab === 'notifications' && (
-            <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Notifications</h2>
-              <p className="text-gray-600">Your notifications will appear here</p>
-            </Card>
           )}
           {activeTab === 'profile' && (
             <div key="profile">

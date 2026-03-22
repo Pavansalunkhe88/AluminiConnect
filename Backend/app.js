@@ -88,6 +88,7 @@ dotenv.config();
 
 const chatRoutes = require("./chat/routes/chatRoutes");
 const setupChatSocket = require("./chat/sockets/chatSocket");
+const setupSocket = require("./chat/sockets/index");
 const adminRoutes = require("./routes/adminRoutes");
 const alumniRoutes = require("./routes/alumniRoutes");
 const studentRoutes = require("./routes/studentRoutes");
@@ -110,8 +111,11 @@ const io = new Server(server, {
   }
 });
 
+const notificationService = new NotificationService(io);
+setupSocket(io, notificationService);
 // Attach chat socket logic
-setupChatSocket(io);
+//setupChatSocket(io);
+
 
 // CONNECT MONGO
 connectMongoDB("mongodb://127.0.0.1:27017/AlumniPortalDB");
@@ -124,6 +128,10 @@ app.use(cors({
 
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.json({ limit: "10mb" }));
+
+// INITIALIZE NOTIFICATION CONTROLLER WITH IO
+const notificationController = new NotificationController(notificationService, io);
+setupNotificationRoutes(notificationController);
 
 // API routes
 app.use("/api/chat", chatRoutes);

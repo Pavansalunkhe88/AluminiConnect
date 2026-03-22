@@ -7,6 +7,10 @@ const Teacher = require("../model/Teacher");
 const Admin = require("../model/Admin");
 const cloudinary = require("../utils/cloudinaryConfig");
 const fs = require("fs");
+const Connection = require("../modules/connections/connectionSchema");
+const NotificationService = require("../modules/notifications/notificationService");
+
+const notificationService = new NotificationService();
 
 // async function handleCreatePost(req, res) {
 //   try {
@@ -220,10 +224,42 @@ async function handleCreatePost(req, res) {
       user: id,
       role: user.role,
       authorName: user.name,
-      authorProfileImage, // now safely defined
+      authorProfileImage,
       content: content.trim(),
       image: imageData,
     });
+
+    // Notify all connected friends about a new post
+    const connections = await Connection.find({
+      status: "ACCEPTED",
+      $or: [
+        { requesterId: id },
+        { recipientId: id },
+      ],
+    }).select("requesterId recipientId").lean();
+
+    const friendIds = new Set();
+    connections.forEach((c) => {
+      const friendId = String(c.requesterId) === String(id) ? String(c.recipientId) : String(c.requesterId);
+      if (friendId && friendId !== String(id)) friendIds.add(friendId);
+    });
+
+    await Promise.all(
+      Array.from(friendIds).map((recipientId) =>
+        notificationService.createNotification({
+          recipient: recipientId,
+          sender: id,
+          type: "NEW_POST",
+          entityId: post._id,
+          entityType: "POST",
+          metadata: {
+            message: `${user.name} posted a new update`,
+          },
+        }).catch((err) => {
+          console.warn("Failed to create feed notification for a friend", recipientId, err.message);
+        }),
+      ),
+    );
 
     return res.status(201).json({
       message: "Post created successfully.",
@@ -395,6 +431,23 @@ async function handleAddComment(req, res) {
     await post.save();
     await post.populate("comments.user", "name");
 
+    // Notify post owner when someone comments
+    if (String(userId) !== String(post.user)) {
+      await notificationService.createNotification({
+        recipient: post.user,
+        sender: userId,
+        type: "FEED_COMMENT",
+        entityId: post._id,
+        entityType: "POST",
+        metadata: {
+          comment: text.trim(),
+          message: "Someone commented on your post",
+        },
+      }).catch((err) => {
+        console.warn("Failed to create comment notification", err.message);
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Comment added successfully.",
@@ -547,10 +600,26 @@ async function handleAddLike(req, res) {
       );
     }
 
+    // Notify post owner of a like
+    if (!alreadyLiked && String(userId) !== String(post.user)) {
+      await notificationService.createNotification({
+        recipient: post.user,
+        sender: userId,
+        type: "FEED_LIKE",
+        entityId: post._id,
+        entityType: "POST",
+        metadata: {
+          message: "Someone liked your post",
+        },
+      }).catch((err) => {
+        console.warn("Failed to create like notification", err.message);
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: alreadyLiked ? "Post unliked." : "Post liked.",
-      likes: updatedPost.likes, // RETURN FULL LIKES ARRAY
+      likes: updatedPost.likes,
       likeCount: updatedPost.likes.length,
       isLiked: !alreadyLiked,
     });

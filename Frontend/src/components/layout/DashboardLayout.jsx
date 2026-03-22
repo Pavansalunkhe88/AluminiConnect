@@ -11,8 +11,7 @@ import AlumniFeed from '../../pages/alumni/Feed';
 import TeacherFeed from '../../pages/teacher/Feed';
 import TeacherProfile from '../../pages/teacher/Profile';
 import RoleDashboard from '../Dashboard/RoleDashboard';
-import Connections from '../../pages/ConnectionPage';
-import NotificationDropdown from '../NotificationDropdown';
+import Directory from '../../pages/Directory';
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -167,9 +166,9 @@ const DashboardLayout = ({ children }) => {
               {React.createElement(getFeedComponent())}
             </div>
           )}
-          {activeTab === 'connections' && (
-            <div key="connections">
-              <Connections />
+          {activeTab === 'directory' && (
+            <div key="directory">
+              <Directory />
             </div>
           )}
           {activeTab === 'messages' && (

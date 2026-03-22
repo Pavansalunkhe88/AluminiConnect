@@ -302,72 +302,37 @@ async function handleGetDashboardData(req, res) {
   try {
     const userId = req.user.id;
 
-    // Get student profile data
-    const student = await Student.findOne({ user: userId }).populate("user", "name email");
-
-    // Get post stats
-    const Post = require("../model/Posts");
-    const totalPosts = await Post.countDocuments({ user: userId });
-
-    // Get total likes received across all posts
-    const userPosts = await Post.find({ user: userId });
-    const totalLikes = userPosts.reduce((sum, post) => sum + (post.likes?.length || 0), 0);
-
-    const stats = [
-      { label: "Skills", value: student?.skills?.length || 0 },
-      { label: "Projects", value: student?.projects?.length || 0 },
-      { label: "Achievements", value: student?.achievements?.length || 0 },
-      { label: "Posts Created", value: totalPosts },
-    ];
-
-    // Get recent posts as activity
-    const recentPosts = await Post.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .lean();
-
-    const activities = recentPosts.map((post) => {
-      const timeAgo = getTimeAgo(post.createdAt);
-      return {
-        type: "post",
-        title: "Post",
-        description: post.content?.substring(0, 80) + (post.content?.length > 80 ? "..." : ""),
-        timestamp: timeAgo,
-      };
-    });
-
-    // If no recent posts, show profile-based activity
-    if (activities.length === 0 && student) {
-      activities.push({
-        type: "profile",
-        title: "Profile Created",
-        description: `Department: ${student.department || "Not set"}`,
-        timestamp: getTimeAgo(student.createdAt),
-      });
-    }
+    // Mock dynamic data - in real app, this would come from database
+    const dashboardData = {
+      stats: [
+        { label: "Events Attended", value: Math.floor(Math.random() * 20) + 1 },
+        { label: "Alumni Connections", value: Math.floor(Math.random() * 50) + 1 },
+        { label: "Projects Completed", value: Math.floor(Math.random() * 10) + 1 }
+      ],
+      activities: [
+        {
+          type: "connection",
+          title: "New Connection",
+          description: "Connected with alumni from Tech Corp",
+          timestamp: "2 hours ago"
+        },
+        {
+          type: "event",
+          title: "Event Registration",
+          description: "Registered for Career Workshop",
+          timestamp: "1 day ago"
+        }
+      ]
+    };
 
     res.status(200).json({
-      success: true,
-      data: { stats, activities },
+      message: "Dashboard data retrieved successfully",
+      data: dashboardData
     });
   } catch (err) {
     console.error("Error fetching dashboard data:", err);
     res.status(500).json({ message: "Internal server error" });
   }
-}
-
-// Helper to convert dates to "X ago" format
-function getTimeAgo(date) {
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-  if (seconds < 60) return "Just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
 }
 
 module.exports = {
@@ -376,6 +341,5 @@ module.exports = {
   handleStudentProfileDelete,
   handleGetUserById,
   handleInsertDataToStudentModel,
-  handleGetStudentProfile,
-  handleGetDashboardData,
+  handleGetStudentProfile
 };

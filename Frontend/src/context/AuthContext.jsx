@@ -5,7 +5,6 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [lastPath, setLastPath] = useState(null);
 
   // Socket connection setup — use local user state, not useAuth hook (which causes circular dependency)
   useEffect(() => {
@@ -35,9 +34,6 @@ export const AuthProvider = ({ children }) => {
         profileImage: parsed.profileImage || null,
       });
     }
-    if (storedPath) {
-      setLastPath(storedPath);
-    }
     setLoading(false);
   }, []);
 
@@ -63,8 +59,6 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
-    updateLastPath,
-    lastPath,
     isAuthenticated: !!user,
   };
 

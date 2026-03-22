@@ -7,7 +7,6 @@ const {
   handleTeacherProfileDelete,
   handleInsertDataToTacherModel,
   handleGetTeacherProfile,
-  handleGetDashboardData,
 } = require("../controller/teacher");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
@@ -43,6 +42,6 @@ router.delete("/profile/delete", handleTeacherProfileDelete);
 // router.get("/all", handleGetAllTeachers);
 // router.delete("/:id", handleDeleteTeacher);
 
-router.get("/dashboard", handleGetDashboardData);
+//router.get("/dashboard", handleGetDashboardData);
 
 module.exports = router;

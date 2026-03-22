@@ -95,31 +95,27 @@ async function handleUserLogin(req, res) {
 
     console.log("Request body:", req.body);
 
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
+    const normalizedRole = role.toLowerCase();
 
     // Validate input
-    if (!email || !password) {
+    if (!email || !password || !role) {
       return res
         .status(400)
-        .json({ message: "Email and password are required" });
+        .json({ message: "Email, password and role are required" });
     }
 
-    // Check if JWT_SECRET_KEY is configured
-    if (!process.env.JWT_SECRET_KEY) {
-      console.error("JWT_SECRET_KEY is not defined in .env file");
-      return res.status(500).json({ 
-        message: "Server configuration error", 
-        error: "JWT_SECRET_KEY is not configured. Please set it in the .env file." 
-      });
-    }
-
-    // Check if user exists by email only — role comes from DB
-    const user = await User.findOne({ email });
+    // Check if user exists
+    const user = await User.findOne({
+      email,
+      role: { $regex: new RegExp(`^${role}$`, "i") },
+    });
     if (!user) {
       return res.status(400).json({ message: "Invalid email" });
     }
 
     console.log(user.role);
+
     // Compare entered password with stored hash
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {

@@ -13,14 +13,9 @@ import TeacherProfile from '../pages/teacher/Profile';
 import ManageUser from '../pages/teacher/ManageUser';
 import Directory from '../pages/Directory';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import AdminDashboard from '../pages/admin/AdminDashboard';
 import StudentProfileEdit from '../pages/student/ProfileSetup';
 import AlumniProfileEdit from '../pages/alumni/ProfileSetup';
 import TeacherProfileEdit from '../pages/teacher/ProfileSetup';
-import HelpCenter from '../pages/public/HelpCenter';
-import ContactUs from '../pages/public/ContactUs';
-import PrivacyPolicy from '../pages/public/PrivacyPolicy';
-import TermsOfService from '../pages/public/TermsOfService';
 
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading, isAuthenticated } = useAuth();
@@ -57,34 +52,18 @@ const AppRoutes = () => {
     return <Navigate to={path} replace />;
   };
 
-  // Helper to redirect authenticated users away from public pages
-  const RedirectIfAuthenticated = ({ children }) => {
-    const { user, isAuthenticated, loading } = useAuth();
-    if (loading) return <div>Loading...</div>;
-    if (isAuthenticated) {
-      const role = user?.role?.toLowerCase();
-      const path = role === 'admin' ? '/admin/dashboard' : `/${role}/dashboard`;
-      return <Navigate to={path} replace />;
-    }
-    return children;
-  };
-
   const withDashboardLayout = (component) => (
     <DashboardLayout>{component}</DashboardLayout>
   );
 
   return (
     <Routes>
-      {/* Public Routes — redirect to dashboard if already logged in */}
-      <Route path="/" element={<RedirectIfAuthenticated><LandingPage /></RedirectIfAuthenticated>} />
-      <Route path="/login" element={<RedirectIfAuthenticated><Login /></RedirectIfAuthenticated>} />
-      <Route path="/register" element={<RedirectIfAuthenticated><Register /></RedirectIfAuthenticated>} />
+      {/* Public Routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-      {/* Public Utility Pages */}
-      <Route path="/help" element={<HelpCenter />} />
-      <Route path="/contact" element={<ContactUs />} />
-      <Route path="/privacy" element={<PrivacyPolicy />} />
-      <Route path="/terms" element={<TermsOfService />} />
+      
 
       {/* Dashboard redirect */}
       <Route path="/dashboard" element={<DashboardRedirect />} />
@@ -104,8 +83,6 @@ const AppRoutes = () => {
               <Route path="profile" element={withDashboardLayout(<StudentProfile />)} />
               <Route path="feed" element={withDashboardLayout(<StudentFeed />)} />
               <Route path="directory" element={withDashboardLayout(<Directory />)} />
-              <Route path="messages" element={withDashboardLayout(<StudentFeed />)} />
-              <Route path="notifications" element={withDashboardLayout(<RoleDashboard />)} />
             </Routes>
           </ProtectedRoute>
         }
@@ -120,8 +97,6 @@ const AppRoutes = () => {
               <Route path="profile" element={withDashboardLayout(<AlumniProfile />)} />
               <Route path="feed" element={withDashboardLayout(<AlumniFeed />)} />
               <Route path="directory" element={withDashboardLayout(<Directory />)} />
-              <Route path="messages" element={withDashboardLayout(<AlumniFeed />)} />
-              <Route path="notifications" element={withDashboardLayout(<RoleDashboard />)} />
             </Routes>
           </ProtectedRoute>
         }
@@ -137,8 +112,6 @@ const AppRoutes = () => {
               <Route path="profile" element={withDashboardLayout(<TeacherProfile />)} />
               <Route path="manage" element={withDashboardLayout(<ManageUser />)} />
               <Route path="directory" element={withDashboardLayout(<Directory />)} />
-              <Route path="messages" element={withDashboardLayout(<TeacherFeed />)} />
-              <Route path="notifications" element={withDashboardLayout(<RoleDashboard />)} />
             </Routes>
           </ProtectedRoute>
         }
@@ -146,10 +119,14 @@ const AppRoutes = () => {
 
       {/* Admin Routes */}
       <Route
-        path="/admin/*"
+        path="/teacher/admin/*"
         element={
           <ProtectedRoute roles={['admin']}>
-            <AdminDashboard />
+            <Routes>
+              <Route path="dashboard" element={withDashboardLayout(<RoleDashboard />)} />
+              <Route path="manage" element={withDashboardLayout(<ManageUser />)} />
+              <Route path="directory" element={withDashboardLayout(<Directory />)} />
+            </Routes>
           </ProtectedRoute>
         }
       />

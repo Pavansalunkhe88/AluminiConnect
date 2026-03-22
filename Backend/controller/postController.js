@@ -7,8 +7,6 @@ const Teacher = require("../model/Teacher");
 const Admin = require("../model/Admin");
 const cloudinary = require("../utils/cloudinaryConfig");
 const fs = require("fs");
-const Notification = require("../model/Notification");
-const { sendNotification } = require("../sockets/notificationSocket");
 
 // async function handleCreatePost(req, res) {
 //   try {
@@ -397,20 +395,6 @@ async function handleAddComment(req, res) {
     await post.save();
     await post.populate("comments.user", "name");
 
-    // Send notification to the post owner (if commenter is not the owner)
-    if (String(post.user) !== String(userId)) {
-      const commenter = await User.findById(userId);
-      const notification = await Notification.create({
-        recipient: post.user,
-        sender: userId,
-        senderName: commenter?.name || "Someone",
-        type: "comment",
-        post: post._id,
-        message: `${commenter?.name || "Someone"} commented on your post`,
-      });
-      sendNotification(post.user, notification);
-    }
-
     return res.status(200).json({
       success: true,
       message: "Comment added successfully.",
@@ -563,24 +547,10 @@ async function handleAddLike(req, res) {
       );
     }
 
-    // Send notification only on LIKE (not unlike), and not to yourself
-    if (!alreadyLiked && String(post.user) !== String(userId)) {
-      const liker = await User.findById(userId);
-      const notification = await Notification.create({
-        recipient: post.user,
-        sender: userId,
-        senderName: liker?.name || "Someone",
-        type: "like",
-        post: post._id,
-        message: `${liker?.name || "Someone"} liked your post`,
-      });
-      sendNotification(post.user, notification);
-    }
-
     return res.status(200).json({
       success: true,
       message: alreadyLiked ? "Post unliked." : "Post liked.",
-      likes: updatedPost.likes,
+      likes: updatedPost.likes, // RETURN FULL LIKES ARRAY
       likeCount: updatedPost.likes.length,
       isLiked: !alreadyLiked,
     });

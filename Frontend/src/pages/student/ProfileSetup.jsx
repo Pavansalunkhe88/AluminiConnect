@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import BackButton from "../../components/ui/BackButton";
 
 const departments = [
   "Computer Science and Engineering",
@@ -141,7 +140,6 @@ const StudentProfileForm = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <BackButton className="mb-2" />
       <h1 className="text-2xl font-bold mb-5 text-center">
         Complete Your Profile
       </h1>

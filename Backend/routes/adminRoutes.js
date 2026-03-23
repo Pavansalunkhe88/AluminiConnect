@@ -1,42 +1,62 @@
- const express = require("express");
+const express = require("express");
 const router = express.Router();
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
+const {
+  getDashboardStats,
+  handleGetAllUsers,
+  deleteUser,
+  verifyUser,
+  rejectUser,
+  getPendingTeachers,
+  createAlumniAccount,
+  updateUserRole,
+  getMonitoringData,
+  searchUsersForSecurity,
+  suspendUser,
+  unsuspendUser,
+  getSecurityStats,
+  exportUsers,
+} = require("../controller/admin");
 
-// All routes below are protected and accessible to admins only
-router.use(verifyToken, authorizeRoles("admin", "superadmin"));
+// All routes are protected — admin/superadmin only
+router.use(verifyToken, authorizeRoles("admin", "superadmin", "Admin"));
 
-/* --------------------- Event Management --------------------- */
+/* ─── Dashboard & Analytics ─── */
+router.get("/dashboard-stats", getDashboardStats);
 
-// Get all events created by this admin or visible in college
-// router.get("/events", getAllEvents);
+/* ─── User Database ─── */
+router.get("/users", handleGetAllUsers);
+router.delete("/users/:id", deleteUser);
+router.patch("/users/:id/role", updateUserRole);
 
-// // Create a new alumni/college event
-// router.post("/events", createEvent);
+/* ─── User Verification ─── */
+router.patch("/users/:id/verify", verifyUser);
+router.patch("/users/:id/reject", rejectUser);
 
-// // Update event details (e.g., time, venue, description)
-// router.put("/events/:eventId", updateEvent);
+/* ─── Teacher Verification ─── */
+router.get("/pending-teachers", getPendingTeachers);
 
-// // Delete an event
-// router.delete("/events/:eventId", deleteEvent);
+/* ─── Alumni Creation ─── */
+router.post("/create-alumni", createAlumniAccount);
 
-// /* --------------------- User Management --------------------- */
+/* ─── Platform Monitoring ─── */
+router.get("/monitoring", getMonitoringData);
 
-// // Get list of alumni, students, mentors, etc.
-// router.get("/users", handleGetAllUsers);
+/* ─── Security & Control ─── */
+router.get("/security/search", searchUsersForSecurity);
+router.get("/security/stats", getSecurityStats);
+router.patch("/users/:id/suspend", suspendUser);
+router.patch("/users/:id/unsuspend", unsuspendUser);
 
-// /* --------------------- Mentorship Management --------------------- */
+/* ─── Data Export ─── */
+router.get("/export-users", exportUsers);
 
-// // Assign a mentor to a mentee manually
-// router.post("/mentorship/assign", assignMentor);
+/* ─── Data Import (CSV) ─── */
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() });
+const { importUsersCSV } = require("../controller/admin");
 
-// // View mentorship requests (pending/approved)
-// router.get("/mentorship/requests", viewMentorshipRequests);
-
-// // Approve mentorship request
-// router.post("/mentorship/approve/:requestId", approveMentorshipRequest);
-
-// // Reject mentorship request
-// router.post("/mentorship/reject/:requestId", rejectMentorshipRequest);
+router.post("/import-users", upload.single("file"), importUsersCSV);
 
 module.exports = router;

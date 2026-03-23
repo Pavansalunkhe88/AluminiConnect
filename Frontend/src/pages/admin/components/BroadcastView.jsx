@@ -1,90 +1,123 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+
+const headers = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }, withCredentials: true });
 
 export default function BroadcastView() {
   const [audience, setAudience] = useState('all');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const templates = [
+    { name: 'Welcome Message', subject: 'Welcome to AlumniConnect!', body: 'We are excited to have you join the AlumniConnect platform. Explore features like mentorship, job postings, and event notifications.' },
+    { name: 'Alumni Meet Invitation', subject: 'Annual Alumni Meet 2026 — You\'re Invited!', body: 'Dear Alumni,\n\nWe are pleased to invite you to the Annual Alumni Meet 2026. Join us for an evening of networking, memories, and celebrations.' },
+    { name: 'Internship/Job Alert', subject: 'New Opportunities Available', body: 'Check out the latest internship and job opportunities posted by our alumni network. Visit the platform to explore.' },
+  ];
+
+  const applyTemplate = (tmpl) => {
+    setSubject(tmpl.subject);
+    setMessage(tmpl.body);
+  };
+
+  const handleSend = async () => {
+    if (!subject.trim() || !message.trim()) {
+      showToast('Subject and message are required', 'error');
+      return;
+    }
+    setSending(true);
+    // This is a UI demonstration — in production, wire to a real endpoint
+    setTimeout(() => {
+      setSending(false);
+      showToast(`Broadcast sent to ${audience === 'all' ? 'all users' : audience}!`);
+      setSubject('');
+      setMessage('');
+    }, 1500);
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Credential Broadcast System</h2>
-          <p className="text-gray-500 text-sm mt-1">Send login credentials, announcements, or event notifications.</p>
-        </div>
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${
+          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+        }`}>{toast.msg}</div>
+      )}
+
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Credential Broadcast System</h2>
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Send announcements and messages to platform users.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Editor Area */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col h-[600px]">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Compose Broadcast</h3>
+        {/* Editor */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Compose Broadcast</h3>
           
           <div className="space-y-4 flex-1 flex flex-col">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
-              <select 
-                value={audience}
-                onChange={(e) => setAudience(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
-              >
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Audience</label>
+              <select value={audience} onChange={e => setAudience(e.target.value)}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 <option value="all">Every Registered User</option>
                 <option value="alumni">All Alumni</option>
                 <option value="students">Current Students</option>
                 <option value="teachers">College Staff & Teachers</option>
-                <option value="custom">Custom List (Upload CSV)</option>
               </select>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-              <input type="text" placeholder="e.g. Upcoming Alumni Meet 2026!" className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+              <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+                placeholder="e.g. Upcoming Alumni Meet 2026!"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400" />
             </div>
-
             <div className="flex-1 flex flex-col">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Message Body</label>
-              <div className="border border-gray-300 rounded-t-lg bg-gray-50 p-2 flex space-x-2">
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-600 font-bold">B</button>
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-600 italic">I</button>
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-600 underline">U</button>
-                <div className="w-px h-6 bg-gray-300 mx-1"></div>
-                <button className="p-1 hover:bg-gray-200 rounded text-gray-600 text-sm flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                  Link
-                </button>
-              </div>
-              <textarea 
-                className="w-full flex-1 border-x border-b border-gray-300 rounded-b-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 resize-none font-sans"
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message Body</label>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                className="w-full flex-1 min-h-[200px] border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
                 placeholder="Write your announcement here..."
-              ></textarea>
+              />
             </div>
-
-            <div className="flex justify-end pt-4 border-t border-gray-100">
-              <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium mr-3 hover:bg-gray-200">Save Draft</button>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm flex items-center">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                Send Broadcast
+            <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button onClick={handleSend} disabled={sending}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm flex items-center transition-colors disabled:opacity-50">
+                {sending ? (
+                  <>
+                    <svg className="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                    Send Broadcast
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Templates Panel */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Templates</h3>
+        {/* Templates */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Quick Templates</h3>
           <div className="space-y-3">
-            <button className="w-full text-left p-3 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors group">
-              <div className="font-semibold text-gray-900 group-hover:text-blue-700">Send Login Credentials</div>
-              <div className="text-xs text-gray-500 mt-1">Generates email with temp password for new users.</div>
-            </button>
-            <button className="w-full text-left p-3 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors group">
-              <div className="font-semibold text-gray-900 group-hover:text-blue-700">Alumni Meet Invitation</div>
-              <div className="text-xs text-gray-500 mt-1">Template for annual gatherings.</div>
-            </button>
-            <button className="w-full text-left p-3 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors group">
-              <div className="font-semibold text-gray-900 group-hover:text-blue-700">Internship/Job Alert</div>
-              <div className="text-xs text-gray-500 mt-1">Share opportunities with students.</div>
-            </button>
-            <button className="w-full text-left p-3 border border-gray-200 rounded-lg border-dashed hover:border-gray-400 hover:bg-gray-50 transition-colors text-center text-sm font-medium text-gray-600">
-              + Create Custom Template
-            </button>
+            {templates.map((tmpl, i) => (
+              <button key={i} onClick={() => applyTemplate(tmpl)}
+                className="w-full text-left p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors group cursor-pointer">
+                <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400">{tmpl.name}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{tmpl.subject}</div>
+              </button>
+            ))}
           </div>
         </div>
       </div>

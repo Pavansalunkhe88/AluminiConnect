@@ -1,76 +1,147 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const headers = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }, withCredentials: true });
 
 export default function TeacherVerificationView() {
+  const [teachers, setTeachers] = useState([]);
+  const [counts, setCounts] = useState({ pending: 0, verified: 0, rejected: 0 });
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const fetchPending = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('/api/admin/pending-teachers', headers());
+      setTeachers(res.data.teachers || []);
+      setCounts(res.data.counts || {});
+    } catch (err) {
+      console.error('Fetch pending teachers error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchPending(); }, []);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleVerify = async (id, name) => {
+    setActionLoading(id);
+    try {
+      await axios.patch(`/api/admin/users/${id}/verify`, {}, headers());
+      showToast(`${name} verified ✅`);
+      fetchPending();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Verify failed', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async (id, name) => {
+    if (!window.confirm(`Reject "${name}"?`)) return;
+    setActionLoading(id);
+    try {
+      await axios.patch(`/api/admin/users/${id}/reject`, {}, headers());
+      showToast(`${name} rejected`);
+      fetchPending();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Reject failed', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium ${
+          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+        }`}>{toast.msg}</div>
+      )}
+
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Teacher Verification Management</h2>
-          <p className="text-gray-500 text-sm mt-1">Verify teacher registrations against admin Employee ID data and assign privileges.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Teacher Verification</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Verify teacher registrations and assign access privileges.</p>
         </div>
-        <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium shadow-sm flex items-center">
-          <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-          Upload Emp ID List
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-yellow-100 text-yellow-800">{counts.pending} Pending</span>
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-800">{counts.verified} Verified</span>
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-900">Pending Verification</h3>
-          <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">3 Teachers Waiting</span>
-        </div>
-        
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teacher Profile</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Privilege Assignment</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {[1,2,3].map((i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-                        P{i}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">Dr. Alan Turing {i}</div>
-                        <div className="text-sm text-gray-500">alan{i}@college.edu</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 flex items-center">
-                      EMP-20{i}
-                      <svg className="w-4 h-4 ml-1 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    Computer Science
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select className="text-sm border-gray-300 rounded-lg outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-50 border py-1.5 px-3">
-                      <option>Teacher (Standard)</option>
-                      <option>Hod / Dean</option>
-                      <option>System Admin</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md mr-2 transition-colors">Approve</button>
-                    <button className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md transition-colors">Reject</button>
-                  </td>
-                </tr>
+          {loading ? (
+            <div className="p-6 space-y-4">
+              {[1,2,3].map(i => (
+                <div key={i} className="flex items-center gap-4 animate-pulse">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-32" />
+                    <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded w-48" />
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          ) : teachers.length === 0 ? (
+            <div className="p-12 text-center">
+              <p className="text-gray-400 dark:text-gray-500 text-lg font-medium">🎉 No pending verifications</p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">All teacher registrations are verified.</p>
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-800/50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teacher</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employee ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Department</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {teachers.map(t => (
+                  <tr key={t._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-700 dark:text-indigo-400 font-bold text-sm">
+                          {t.name?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{t.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{t.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                      {t.empId || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {t.department || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => handleVerify(t._id, t.name)}
+                        disabled={actionLoading === t._id}
+                        className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition-colors disabled:opacity-50"
+                      >Approve</button>
+                      <button
+                        onClick={() => handleReject(t._id, t.name)}
+                        disabled={actionLoading === t._id}
+                        className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md transition-colors disabled:opacity-50"
+                      >Reject</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

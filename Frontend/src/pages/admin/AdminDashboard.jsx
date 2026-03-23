@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   UsersIcon, 
-  CheckBadgeIcon, 
   UserPlusIcon, 
   AcademicCapIcon, 
   MegaphoneIcon, 
@@ -16,7 +15,6 @@ import { useAuth } from '../../hooks/useAuth';
 
 // We'll import these sub-components shortly
 import UserDatabaseView from './components/UserDatabaseView';
-import StudentVerificationView from './components/StudentVerificationView';
 import AlumniCreationView from './components/AlumniCreationView';
 import TeacherVerificationView from './components/TeacherVerificationView';
 import BroadcastView from './components/BroadcastView';
@@ -33,7 +31,6 @@ const AdminDashboard = () => {
   const navigation = [
     { id: 'analytics', name: 'Dashboard & Analytics', icon: ChartBarIcon },
     { id: 'users', name: 'User Database', icon: UsersIcon },
-    { id: 'student-verification', name: 'Student Verification', icon: CheckBadgeIcon },
     { id: 'alumni-creation', name: 'Alumni Creation', icon: UserPlusIcon },
     { id: 'teacher-verification', name: 'Teacher Verification', icon: AcademicCapIcon },
     { id: 'broadcast', name: 'Credential Broadcast', icon: MegaphoneIcon },
@@ -46,7 +43,6 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'users': return <UserDatabaseView />;
-      case 'student-verification': return <StudentVerificationView />;
       case 'alumni-creation': return <AlumniCreationView />;
       case 'teacher-verification': return <TeacherVerificationView />;
       case 'broadcast': return <BroadcastView />;
@@ -60,13 +56,13 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex bg-gray-50 min-h-[calc(100vh-64px)] rounded-xl overflow-hidden shadow-inner border border-gray-200 mt-6 mx-6 mb-6">
+    <div className="flex bg-gray-50 dark:bg-gray-900 min-h-[calc(100vh-64px)] rounded-xl overflow-hidden shadow-inner border border-gray-200 dark:border-gray-700 mt-6 mx-6 mb-6 transition-colors duration-200">
       
       {/* Sidebar Navigation */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">Admin Module</h2>
-          <p className="text-xs text-gray-500 mt-1">Manage platform settings</p>
+      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-colors duration-200">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white">Admin Module</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Manage platform settings</p>
         </div>
         
         <nav className="flex-1 overflow-y-auto py-4 space-y-1">
@@ -78,12 +74,12 @@ const AdminDashboard = () => {
                 onClick={() => setActiveTab(item.id)}
                 className={`w-full flex items-center px-4 py-3 text-sm font-medium transition-colors ${
                   isActive 
-                    ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-700' 
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-r-4 border-blue-700 dark:border-blue-400' 
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <item.icon 
-                  className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? 'text-blue-700' : 'text-gray-400'}`} 
+                  className={`mr-3 h-5 w-5 flex-shrink-0 ${isActive ? 'text-blue-700 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} 
                   aria-hidden="true" 
                 />
                 <span className="truncate whitespace-nowrap">{item.name}</span>
@@ -93,19 +89,19 @@ const AdminDashboard = () => {
         </nav>
 
         {/* Logout Button */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={logout}
-            className="w-full flex items-center px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors rounded-md"
+            className="w-full flex items-center px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 transition-colors rounded-md"
           >
-            <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5 flex-shrink-0 text-red-500" aria-hidden="true" />
+            <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5 flex-shrink-0 text-red-500 dark:text-red-400" aria-hidden="true" />
             <span className="truncate whitespace-nowrap">Sign Out</span>
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto bg-gray-50">
+      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
         <div className="p-8">
           {renderContent()}
         </div>

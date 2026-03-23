@@ -95,8 +95,9 @@ const teacherRoutes = require("./routes/teacherRoutes");
 const loginRegister = require("./routes/loginRegisterRoutes");
 const postRoutes = require("./routes/postRoutes");
 const directoryRoutes = require('./routes/directoryRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
-const { setupNotificationSocket } = require('./sockets/notificationSocket');
+const settingsRoutes = require('./routes/settingsRoutes');
+const connectionRoutes = require('./modules/connections/connectionRoutes');
+const jobRoutes = require('./routes/jobRoutes');
 
 const port = 4000;
 
@@ -113,9 +114,6 @@ const io = new Server(server, {
 
 // Attach chat socket logic
 setupChatSocket(io);
-
-// Attach notification socket logic
-setupNotificationSocket(io);
 
 // CONNECT MONGO
 connectMongoDB("mongodb://127.0.0.1:27017/AlumniPortalDB");
@@ -138,7 +136,11 @@ app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/alumni", alumniRoutes);
 app.use("/api/directory", directoryRoutes);
-app.use("/api/notifications", notificationRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/recommendations", require("./modules/recommendation/routes"));
+app.use("/api/connections", connectionRoutes);
+app.use("/api/chatbot", require("./routes/chatbotRoutes"));
+app.use("/api/jobs", jobRoutes);
 
 // 404 fallback
 app.use((req, res) => {

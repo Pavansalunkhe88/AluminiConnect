@@ -12,6 +12,7 @@ import TeacherFeed from '../pages/teacher/Feed';
 import TeacherProfile from '../pages/teacher/Profile';
 import ManageUser from '../pages/teacher/ManageUser';
 import Directory from '../pages/Directory';
+import JobPortal from '../pages/JobPortal';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import StudentProfileEdit from '../pages/student/ProfileSetup';
@@ -104,8 +105,9 @@ const AppRoutes = () => {
               <Route path="profile" element={withDashboardLayout(<StudentProfile />)} />
               <Route path="feed" element={withDashboardLayout(<StudentFeed />)} />
               <Route path="directory" element={withDashboardLayout(<Directory />)} />
+              <Route path="jobs" element={withDashboardLayout(<JobPortal />)} />
               <Route path="messages" element={withDashboardLayout(<StudentFeed />)} />
-              <Route path="notifications" element={withDashboardLayout(<RoleDashboard />)} />
+              <Route path="settings" element={withDashboardLayout(<div />)} />
             </Routes>
           </ProtectedRoute>
         }
@@ -120,8 +122,9 @@ const AppRoutes = () => {
               <Route path="profile" element={withDashboardLayout(<AlumniProfile />)} />
               <Route path="feed" element={withDashboardLayout(<AlumniFeed />)} />
               <Route path="directory" element={withDashboardLayout(<Directory />)} />
+              <Route path="jobs" element={withDashboardLayout(<JobPortal />)} />
               <Route path="messages" element={withDashboardLayout(<AlumniFeed />)} />
-              <Route path="notifications" element={withDashboardLayout(<RoleDashboard />)} />
+              <Route path="settings" element={withDashboardLayout(<div />)} />
             </Routes>
           </ProtectedRoute>
         }
@@ -137,8 +140,9 @@ const AppRoutes = () => {
               <Route path="profile" element={withDashboardLayout(<TeacherProfile />)} />
               <Route path="manage" element={withDashboardLayout(<ManageUser />)} />
               <Route path="directory" element={withDashboardLayout(<Directory />)} />
+              <Route path="jobs" element={withDashboardLayout(<JobPortal />)} />
               <Route path="messages" element={withDashboardLayout(<TeacherFeed />)} />
-              <Route path="notifications" element={withDashboardLayout(<RoleDashboard />)} />
+              <Route path="settings" element={withDashboardLayout(<div />)} />
             </Routes>
           </ProtectedRoute>
         }

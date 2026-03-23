@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/Card';
 import { useAuth } from '../../hooks/useAuth';
+import SuggestedConnections from '../recommendations/SuggestedConnections';
 
 const dashboardConfigs = {
   student: {
@@ -14,25 +16,25 @@ const dashboardConfigs = {
     ],
     actions: [
       {
+        title: "Job Board",
+        description: "Find AI recommended job opportunities",
+        buttonText: "View Jobs",
+        path: "/jobs",
+        icon: '💼'
+      },
+      {
         title: "Connections",
         description: "Manage your connections with alumni, teachers, and students",
         buttonText: "View Connections",
-        onClick: () => {},
+        path: "/directory",
         icon: '👥'
       },
       {
         title: "Upcoming Events",
         description: "View and register for upcoming events",
         buttonText: "View Events",
-        onClick: () => {},
+        path: "/events",
         icon: '📅'
-      },
-      {
-        title: "Learning Resources",
-        description: "Access educational materials and courses",
-        buttonText: "Start Learning",
-        onClick: () => {},
-        icon: '📚'
       }
     ],
     activities: [
@@ -56,23 +58,23 @@ const dashboardConfigs = {
     actions: [
       {
         title: "Job Board",
-        description: "Post or find job opportunities",
+        description: "Post or find AI recommended job opportunities",
         buttonText: "View Jobs",
-        onClick: () => {},
+        path: "/jobs",
         icon: '💼'
       },
       {
         title: "Mentor Students",
         description: "Guide and support current students",
         buttonText: "Start Mentoring",
-        onClick: () => {},
+        path: "/mentoring",
         icon: '🎓'
       },
       {
         title: "Share Story",
         description: "Share your success story",
         buttonText: "Share Now",
-        onClick: () => {},
+        path: "/feed",
         icon: '📖'
       }
     ],
@@ -96,25 +98,25 @@ const dashboardConfigs = {
     ],
     actions: [
       {
+        title: "Job Board",
+        description: "Post or find AI recommended job opportunities",
+        buttonText: "View Jobs",
+        path: "/jobs",
+        icon: '💼'
+      },
+      {
         title: "Connections",
-        description: "Manage your connections with alumni, teachers, and students",
+        description: "Manage your connections",
         buttonText: "View Connections",
-        onClick: () => {},
+        path: "/directory",
         icon: '👥'
       },
       {
         title: "Student Management",
         description: "View and manage student records",
         buttonText: "Manage Students",
-        onClick: () => {},
+        path: "/manage",
         icon: '👨‍🎓'
-      },
-      {
-        title: "Reports",
-        description: "Generate and view reports",
-        buttonText: "View Reports",
-        onClick: () => {},
-        icon: '📈'
       }
     ],
     activities: [
@@ -129,13 +131,13 @@ const dashboardConfigs = {
 };
 
 const ActivityItem = ({ activity }) => (
-  <div className="p-4 hover:bg-gray-50">
+  <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
     <div className="flex items-center">
       <div className="flex-1">
-        <h4 className="text-sm font-semibold text-gray-900">{activity.title}</h4>
-        <p className="text-sm text-gray-600">{activity.description}</p>
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{activity.title}</h4>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{activity.description}</p>
       </div>
-      <span className="text-xs text-gray-500">{activity.timestamp}</span>
+      <span className="text-xs text-gray-500 dark:text-gray-500">{activity.timestamp}</span>
     </div>
   </div>
 );
@@ -186,13 +188,13 @@ const RoleDashboard = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
       {/* Header Section */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           {currentConfig.welcomeMessage(user?.name || 'User')}
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           {currentConfig.subtitle(
             user?.role === 'student' ? user?.prn_number || 'N/A'
             : user?.role === 'alumni' ? user?.graduation_year || 'N/A'
@@ -205,25 +207,25 @@ const RoleDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {loading ? (
           Array.from({ length: 4 }).map((_, index) => (
-            <Card key={index} className="p-6 bg-white">
+            <Card key={index} className="p-6 bg-white dark:bg-gray-800 dark:border-gray-700">
               <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
               </div>
             </Card>
           ))
         ) : dashboardData?.stats ? (
           dashboardData.stats.map((stat, index) => (
-            <Card key={index} className="p-6 bg-white">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{stat.label}</h3>
-              <p className="text-3xl font-bold text-blue-600">{stat.value}</p>
+            <Card key={index} className="p-6 bg-white dark:bg-gray-800 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{stat.label}</h3>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stat.value}</p>
             </Card>
           ))
         ) : (
           currentConfig.stats.map((stat, index) => (
-            <Card key={index} className="p-6 bg-white">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{stat.label}</h3>
-              <p className="text-3xl font-bold text-blue-600">{stat.value}</p>
+            <Card key={index} className="p-6 bg-white dark:bg-gray-800 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{stat.label}</h3>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stat.value}</p>
             </Card>
           ))
         )}
@@ -231,18 +233,24 @@ const RoleDashboard = () => {
 
       {/* Quick Actions */}
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentConfig.actions.map((action, index) => (
-            <Card key={index} className="p-6 bg-white hover:shadow-lg transition-shadow">
+            <Card key={index} className="p-6 bg-white dark:bg-gray-800 hover:shadow-lg transition-shadow dark:border-gray-700">
               <div className="flex items-start">
                 {action.icon && <span className="text-2xl mr-4">{action.icon}</span>}
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{action.title}</h3>
-                  <p className="text-gray-600 mb-4">{action.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{action.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">{action.description}</p>
                   <button
-                    onClick={action.onClick}
-                    className="text-blue-600 font-semibold hover:text-blue-800"
+                    onClick={() => {
+                      if (action.path) {
+                        navigate(`/${user?.role?.toLowerCase() || 'student'}${action.path}`);
+                      } else if (action.onClick) {
+                        action.onClick();
+                      }
+                    }}
+                    className="text-blue-600 font-semibold hover:text-blue-800 focus:outline-none"
                   >
                     {action.buttonText} →
                   </button>
@@ -253,17 +261,20 @@ const RoleDashboard = () => {
         </div>
       </div>
 
+      {/* AI Suggested Connections */}
+      <SuggestedConnections />
+
       {/* Recent Activity */}
       <div>
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
-        <Card className="divide-y divide-gray-200">
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
+        <Card className="divide-y divide-gray-200 dark:divide-gray-700 dark:bg-gray-800 dark:border-gray-700">
           {loading ? (
             Array.from({ length: 2 }).map((_, index) => (
               <div key={index} className="p-4">
                 <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-1"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
                 </div>
               </div>
             ))
